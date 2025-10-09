@@ -1,17 +1,26 @@
 /*
- *
- * This file will hold the code in order to parse the json file
- * from Render, and create and return the objects that it found.
- *
- * James Hocking, 2025 w. ChatGPT 5
- */
+BlenderFileReader.h
+James Hocking, 2025
+*/
 
 #pragma once
 
 #include "Camera.h"
+#include <iostream>
 #include <string>
 
 class BlenderFileReader {
-private:
-  Camera *get_camera_from_blender_file(std::string filepath);
+  /*
+  This class will be directly connected to a file exported from blender
+  and will be used in order to process and create the required objects from
+  the file.
+  */
+  public: 
+    BlenderFileReader(std::string filepath) : _filepath(filepath) {
+      std::cout << "Created a blender file reader for " << _filepath << std::endl;
+    };
+
+  private:
+    std::string _filepath;
+    Camera& get_camera_from_blender_file();
 };
