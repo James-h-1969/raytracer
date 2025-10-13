@@ -8,6 +8,7 @@ James Hocking, 202
 #include "Light.h"
 #include "Camera.h"
 #include <string>
+#include <fstream>
 #include <vector>
 
 struct Pixel {

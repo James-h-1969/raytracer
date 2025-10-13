@@ -10,3 +10,9 @@ cmake --build build
 
 ./build/MyCppProject
 ```
+
+## Converting images 
+When the final code outputs a `.ppm` file, you can convert it into a png using 
+```bash
+convert output.ppm output.png
+```
