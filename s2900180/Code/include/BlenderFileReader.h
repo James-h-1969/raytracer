@@ -18,7 +18,7 @@ class BlenderFileReader {
   the file.
   */
   public: 
-    BlenderFileReader(std::string filepath) : _filepath(filepath) {
+    BlenderFileReader(std::string filepath) : _filepath(filepath), _camera_read(false) {
       std::cout << "Created a blender file reader for " << _filepath << std::endl;
     };
     Camera& get_camera_from_blender_file();
@@ -26,4 +26,5 @@ class BlenderFileReader {
   private:
     std::string _filepath;
     Camera _camera;
+    bool _camera_read;
 };

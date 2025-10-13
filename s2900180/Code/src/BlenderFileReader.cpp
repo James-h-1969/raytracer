@@ -1,6 +1,10 @@
 #include "BlenderFileReader.h"
 
 Camera& BlenderFileReader::get_camera_from_blender_file() {
+  if (_camera_read) {
+    return _camera;
+  }
+
   // read the json file
   std::ifstream file(_filepath);
   if (!file.is_open()) {
@@ -22,6 +26,7 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
     throw std::runtime_error("No camera object found in file");
   }
 
+  // construct camera object
   Eigen::Vector3f location = {
         camera_json["location"][0].get<float>(),
         camera_json["location"][1].get<float>(),
@@ -40,7 +45,6 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
     float resolution_x  = camera_json["resolution_x"].get<float>();
     float resolution_y  = camera_json["resolution_y"].get<float>();
 
-    // Construct CameraProperties
     CameraProperties camera_properties{
         location,
         gaze_vector,
@@ -51,8 +55,7 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
         resolution_y
     };
 
-    // Store the camera as a member variable (so the reference is valid)
     _camera = Camera(camera_properties);
+    _camera_read = true;
     return _camera;
-
 }

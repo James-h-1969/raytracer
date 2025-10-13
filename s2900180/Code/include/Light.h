@@ -7,6 +7,11 @@ James Hocking, 2025
 
 #include <Eigen/Dense>
 
+struct Ray {
+    Eigen::Vector3f origin;
+    Eigen::Vector3f direction;
+};
+
 class Light {
     public:
         Light(Eigen::Vector3f location, float radiant_intensity) : 
