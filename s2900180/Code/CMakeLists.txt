@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(nlohmann_json 3.2.0 REQUIRED)
 
 set(SOURCES
     src/main.cpp
@@ -19,6 +20,7 @@ set(SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall

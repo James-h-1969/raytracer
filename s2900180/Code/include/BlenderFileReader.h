@@ -7,7 +7,9 @@ James Hocking, 2025
 
 #include "Camera.h"
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <nlohmann/json.hpp>
 
 class BlenderFileReader {
   /*
@@ -19,8 +21,9 @@ class BlenderFileReader {
     BlenderFileReader(std::string filepath) : _filepath(filepath) {
       std::cout << "Created a blender file reader for " << _filepath << std::endl;
     };
+    Camera& get_camera_from_blender_file();
 
   private:
     std::string _filepath;
-    Camera& get_camera_from_blender_file();
+    Camera _camera;
 };
