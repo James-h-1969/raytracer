@@ -1,6 +1,6 @@
 /*
 Image.h
-James Hocking, 202
+James Hocking, 2025
 */
 
 #pragma once 
@@ -35,7 +35,7 @@ class PPMImageFile {
         PPMImageFile(std::string filename): _filename(filename) {};
         Pixel get_pixel(int x, int y) {return _image_map.at(y).at(x); };
         void read_image_from_file();
-        void write_current_image_to_file();
+        void write_current_image_to_file(std::string export_filename);
         void update_pixel(int px, int py, int r, int g, int b);
     private:
         std::string _filename;

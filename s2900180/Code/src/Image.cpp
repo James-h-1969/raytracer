@@ -46,8 +46,8 @@ void PPMImageFile::update_pixel(int px, int py, int r, int g, int b) {
     to_update.b = b;
 }
 
-void PPMImageFile::write_current_image_to_file() {
-    std::ofstream out(_filename);
+void PPMImageFile::write_current_image_to_file(std::string export_filename) {
+    std::ofstream out(export_filename);
     if (!out) {
         std::cerr << "Error: Could not open file for writing\n";
         return;

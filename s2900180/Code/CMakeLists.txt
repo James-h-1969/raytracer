@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(MyCppProject LANGUAGES CXX)
+project(raytracer LANGUAGES CXX)
 
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_STANDARD 20)
@@ -28,3 +28,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wpedantic
     -O2
 )
+
+# Enable testing
+enable_testing()
+add_subdirectory(test)
