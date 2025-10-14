@@ -9,7 +9,10 @@ James Hocking, 2025
 #include "Camera.h"
 #include <string>
 #include <fstream>
+#include <random>
 #include <vector>
+
+void generate_ray_text_file(Camera& camera);
 
 struct Pixel {
     /*

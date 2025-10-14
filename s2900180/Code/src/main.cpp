@@ -1,9 +1,11 @@
 #include "BlenderFileReader.h"
+#include "Image.h"
 #include <iostream>
 
 #define FILENAME std::string("../../ASCII/test.json")
 
 int main() {
+    // PART 1
     std::cout << " -- TESTING BLENDER FILE READER --" << std::endl;
 
     BlenderFileReader blender_file_reader = BlenderFileReader(FILENAME);
@@ -14,6 +16,9 @@ int main() {
     for (Mesh* mesh: meshes) {
         mesh->show_properties();
     }
+
+    // PART 2 - RAYS
+    generate_ray_text_file(camera);
 
     return 0;
 }
