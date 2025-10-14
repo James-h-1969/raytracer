@@ -7,6 +7,7 @@ James Hocking, 2025
 
 #include <Eigen/Dense>
 #include <string>
+#include <array>
 #include <iostream>
 
 enum class MeshType {
@@ -46,10 +47,15 @@ class Sphere: public Mesh {
         float _radius;
 };
 
-class Plane: public Mesh {
+class Plane : public Mesh {
     public:
-        Plane(Eigen::Vector4f corners, std::string name, enum MeshType type) : Mesh(std::move(name), type), _corners(corners) {};
+        Plane(const std::array<Eigen::Vector3f, 4>& corners,
+            std::string name,
+            MeshType type)
+            : Mesh(std::move(name), type), _corners(corners) {}
+
         void show_properties() override;
+
     private:
-        Eigen::Vector4f _corners;
+        std::array<Eigen::Vector3f, 4> _corners;
 };

@@ -4,9 +4,11 @@ into an image.
 
 ## Running the code
 ```bash
-cmake -B build
+mkdir build && cd build
 
-cmake --build build
+cmake ..
+
+make run
 
 ./build/MyCppProject
 ```

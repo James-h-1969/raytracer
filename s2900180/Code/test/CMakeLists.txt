@@ -8,17 +8,25 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+# --- Test executable ---
 add_executable(runTests
     test_Image.cpp
 )
 
+# Link against GoogleTest AND your main library
 target_link_libraries(runTests
     PRIVATE
+        raytracer_lib     # <-- link your project’s library
         GTest::gtest_main
         GTest::gtest
         GTest::gmock
-        raytracer  
 )
 
+# Inherit include directories from the project
+target_include_directories(runTests PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+# --- Enable test discovery ---
 include(GoogleTest)
 gtest_discover_tests(runTests)
