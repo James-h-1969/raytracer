@@ -25,8 +25,20 @@ struct Pixel {
     float g;
     float b;
 
-    Ray as_ray(const Camera& camera) {
-        // TODO. convert the pixel to a ray based on the cameras positon
+    Ray& as_ray(Camera& camera) {
+        Ray ray;
+        ray.origin = camera.get_camera_properties().location;
+
+
+        /*
+        
+        My understanding so far is to take current location + d * central direction vector 
+        and then dependening on row and column, and width and height of the image then 
+        we split it up and find the value.
+        
+        */
+
+        return ray;
     };
 };
 

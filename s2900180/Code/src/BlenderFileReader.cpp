@@ -59,3 +59,19 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
     _camera_read = true;
     return _camera;
 }
+
+std::vector<Mesh> BlenderFileReader::get_meshes_from_blender_file() {
+  // read the json file
+  std::ifstream file(_filepath);
+  if (!file.is_open()) {
+    std::cerr << "Error: Could not open the file.\n";
+    throw std::runtime_error("Could not open file");
+  }
+
+  nlohmann::json file_json; 
+  file >> file_json;
+
+  for (const auto& object : file_json["objects"]) {
+    
+  }
+}

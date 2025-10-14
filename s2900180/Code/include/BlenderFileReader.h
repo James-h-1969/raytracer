@@ -6,9 +6,11 @@ James Hocking, 2025
 #pragma once
 
 #include "Camera.h"
+#include "Mesh.h"
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 class BlenderFileReader {
@@ -22,6 +24,7 @@ class BlenderFileReader {
       std::cout << "Created a blender file reader for " << _filepath << std::endl;
     };
     Camera& get_camera_from_blender_file();
+    std::vector<Mesh> get_meshes_from_blender_file();
 
   private:
     std::string _filepath;
