@@ -39,6 +39,14 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
       camera_json["gaze_vector_direction"][2].get<float>()
   };
 
+  Eigen::Vector3f up_vector = {
+    camera_json["up_vector"][0].get<float>(),
+    camera_json["up_vector"][1].get<float>(),
+    camera_json["up_vector"][2].get<float>(),
+  };
+
+  SensorFit sensor_fit = camera_json["sensor_fit"] == "VERTICAL" ? SensorFit::VERTICAL : SensorFit::HORIZONTAL;
+
   float focal_length  = camera_json["focal_length"].get<float>();
   float sensor_width  = camera_json["sensor_width"].get<float>();
   float sensor_height = camera_json["sensor_height"].get<float>();
@@ -48,6 +56,8 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
   CameraProperties camera_properties{
       location,
       gaze_vector,
+      up_vector,
+      sensor_fit,
       focal_length,
       sensor_width,
       sensor_height,

@@ -9,6 +9,11 @@ James Hocking, 2025
 #include <iostream>
 #include <Eigen/Dense>
 
+enum class SensorFit {
+  VERTICAL,
+  HORIZONTAL,
+};
+
 struct CameraProperties {
   /*
   This struct holds the main quantative properties of the 
@@ -16,6 +21,8 @@ struct CameraProperties {
   */
     Eigen::Vector3f location;
     Eigen::Vector3f gaze_vector_direction;
+    Eigen::Vector3f up_vector;
+    enum SensorFit sensor_fit;
     float focal_length;
     float sensor_width;
     float sensor_height;
@@ -28,6 +35,10 @@ struct CameraProperties {
         std::cout << "  Gaze Vector: [" << gaze_vector_direction.x() << ", "
                   << gaze_vector_direction.y() << ", "
                   << gaze_vector_direction.z() << "]\n";
+        std::cout << "  Up Vector: [" << up_vector.x() << ", "
+                  << up_vector.y() << ", "
+                  << up_vector.z() << "]\n";
+        std::cout << "  Sensor fit: " << (sensor_fit == SensorFit::VERTICAL ? "Vertical" : "Horizontal") << "\n";
         std::cout << "  Focal Length: " << focal_length << " mm\n";
         std::cout << "  Sensor Size: " << sensor_width << " x " << sensor_height << " mm\n";
         std::cout << "  Resolution: " << resolution_x << " x " << resolution_y << " px\n";

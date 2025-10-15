@@ -40,10 +40,9 @@ void PPMImageFile::read_image_from_file() {
 }
 
 void PPMImageFile::update_pixel(int px, int py, int r, int g, int b) {
-    Pixel to_update = _image_map.at(py).at(px);
-    to_update.r = r;
-    to_update.g = g;
-    to_update.b = b;
+    _image_map.at(py).at(px).r = r;
+    _image_map.at(py).at(px).g = g;
+    _image_map.at(py).at(px).b = b;
 }
 
 void PPMImageFile::write_current_image_to_file(std::string export_filename) {
@@ -70,34 +69,34 @@ void generate_ray_text_file(Camera& camera) {
     const auto& props = camera.get_camera_properties();
     std::vector<Ray> rays;
 
-    // Camera basis
-    Eigen::Vector3f forward = props.gaze_vector_direction.normalized();
-    Eigen::Vector3f world_up(0, 0, 1);
-    Eigen::Vector3f right = forward.cross(world_up).normalized();
-    Eigen::Vector3f up = right.cross(forward).normalized();
+    // Normalized camera basis vectors from Blender export
+    Eigen::Vector3f w_vec = props.gaze_vector_direction.normalized();  // Forward (-Y in Blender)
+    Eigen::Vector3f up_vec = props.up_vector.normalized();             // Up (+Z in Blender)
+    Eigen::Vector3f u_vec = up_vec.cross(w_vec).normalized();          // Right (+X)
+    Eigen::Vector3f v_vec = w_vec.cross(u_vec).normalized();           // True up, orthogonalized
 
-    // Image plane
-    Eigen::Vector3f image_center = props.location + forward * props.focal_length;
-    float pixel_width = props.sensor_width / props.resolution_x;
-    float pixel_height = props.sensor_height / props.resolution_y;
-    Eigen::Vector3f top_left = image_center - right * (props.sensor_width / 2.0f) + up * (props.sensor_height / 2.0f);
+    float d = props.focal_length;
 
-    // Random sampling for 50 rays
-    std::mt19937 rng(42);
-    std::uniform_int_distribution<int> dist_x(0, props.resolution_x - 1);
-    std::uniform_int_distribution<int> dist_y(0, props.resolution_y - 1);
+    for (int px = 0; px <= props.resolution_x; px += props.resolution_x / 5) {
+        for (int py = 0; py <= props.resolution_y; py += props.resolution_y / 5) {
 
-    for (int i = 0; i < 50; ++i) {
-        int px = dist_x(rng);
-        int py = dist_y(rng);
+            // Offset pixel centers so image plane is exactly centered
+            float u = ((static_cast<float>(px) / (props.resolution_x - 1)) - 0.5f) * props.sensor_width;
+            float v = -props.sensor_height / 2 + (static_cast<float>(py)/ (props.resolution_y)) * props.sensor_height;
 
-        Eigen::Vector3f pixel_pos = top_left
-            + right * ((px + 0.5f) * pixel_width)
-            - up * ((py + 0.5f) * pixel_height);
+            std::cout << "v:" << v << std::endl;
 
-        rays.emplace_back(props.location, pixel_pos - props.location);
+            // Construct ray
+            Ray current_ray;
+            current_ray.origin = props.location;
+            Eigen::Vector3f dir = (w_vec * d) + (u_vec * u) + (v_vec * v);  // Blender forward = -Y
+            current_ray.direction = dir.normalized();
+
+            rays.push_back(current_ray);
+        }
     }
 
+    // Write to file
     std::ofstream out("../../Output/rays.txt");
     if (!out.is_open()) {
         std::cerr << "Failed to open rays.txt for writing.\n";

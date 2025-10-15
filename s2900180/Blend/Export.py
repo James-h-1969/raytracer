@@ -11,7 +11,7 @@ import mathutils
 import math
 
 ### PARAMETERS: Only change here 
-OUTPUT_FILE_PATH = "output.json"
+OUTPUT_FILE_PATH = "/home/jhocking542/computer-graphics/raytracer/s2900180/ASCII/output_test.json"
 ################################
 
 def vector_to_list(v):
@@ -95,13 +95,15 @@ def get_blend_object_as_dict():
             entry.update({
                 "location": vector_to_list(obj.matrix_world.to_translation()),
                 "gaze_vector_direction": vector_to_list(get_camera_gaze_vector(obj)),
+                "up_vector": vector_to_list(obj.matrix_world.to_quaternion() @ mathutils.Vector((0.0, 1.0, 0.0))),
                 "focal_length": float(cam.lens),
                 "sensor_width": float(cam.sensor_width),
                 "sensor_height": float(cam.sensor_height),
                 "film_resolution": [
                     int(scene.render.resolution_x),
                     int(scene.render.resolution_y)
-                ]
+                ],
+                
             })
 
         elif obj.type == "LIGHT" and obj.data.type == "POINT":
