@@ -10,6 +10,8 @@ James Hocking, 2025
 #include <array>
 #include <iostream>
 
+constexpr int NUMBER_OF_PLANE_CORNERS = 4;
+
 enum class MeshType {
     CUBE,
     SPHERE,
@@ -49,7 +51,7 @@ class Sphere: public Mesh {
 
 class Plane : public Mesh {
     public:
-        Plane(const std::array<Eigen::Vector3f, 4>& corners,
+        Plane(const std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS>& corners,
             std::string name,
             MeshType type)
             : Mesh(std::move(name), type), _corners(corners) {}
@@ -57,5 +59,5 @@ class Plane : public Mesh {
         void show_properties() override;
 
     private:
-        std::array<Eigen::Vector3f, 4> _corners;
+        std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> _corners;
 };

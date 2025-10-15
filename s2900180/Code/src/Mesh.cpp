@@ -18,7 +18,7 @@ void Sphere::show_properties() {
 void Plane::show_properties() {
     std::cout << "\nMesh: " << _name << "\n";
     std::cout << "Type: Plane\n";
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < NUMBER_OF_PLANE_CORNERS; ++i) {
         std::cout << " Corner " << i + 1 << ": "
                   << _corners[i].transpose() << "\n";
     }
