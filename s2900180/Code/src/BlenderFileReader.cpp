@@ -1,10 +1,6 @@
 #include "BlenderFileReader.h"
 
 Camera& BlenderFileReader::get_camera_from_blender_file() {
-  if (_camera_read) {
-    return _camera;
-  }
-
   // read the json file
   std::ifstream file(_filepath);
   if (!file.is_open()) {
@@ -45,7 +41,10 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
     camera_json["up_vector"][2].get<float>(),
   };
 
-  SensorFit sensor_fit = camera_json["sensor_fit"] == "VERTICAL" ? SensorFit::VERTICAL : SensorFit::HORIZONTAL;
+  // classify the sensor fit (if AUTO, depends on which is larger between height and width)
+  SensorFit sensor_fit = (camera_json["sensor_fit"] == "VERTICAL" || 
+    (camera_json["sensor_fit"] == "AUTO" && camera_json["sensor_height"] > camera_json["sensor_width"]))
+   ? SensorFit::VERTICAL : SensorFit::HORIZONTAL;
 
   float focal_length  = camera_json["focal_length"].get<float>();
   float sensor_width  = camera_json["sensor_width"].get<float>();
@@ -65,8 +64,7 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
       resolution_y
   };
 
-  _camera = Camera(camera_properties);
-  _camera_read = true;
+  Camera _camera = Camera(camera_properties);
   return _camera;
 }
 

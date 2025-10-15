@@ -10,6 +10,13 @@ James Hocking, 2025
 #include <Eigen/Dense>
 
 enum class SensorFit {
+  /*
+  Enum that represents the two types of sensor fits. In vertical mode, 
+  the height is the sensor height and then the width is varied to match the 
+  aspect ratio. In horizontal mode, this is flipped. Blender defaults to 
+  AUTO, in which the BlenderFileReader class determines as vertical
+  or horizontal based on the size of the sensor height and width.
+  */
   VERTICAL,
   HORIZONTAL,
 };
@@ -51,7 +58,6 @@ class Camera {
   functions required to simulated its use.  
   */
   public:
-    Camera() = default;
     Camera(struct CameraProperties camera_properties) : _camera_properties(camera_properties) {};
 
     struct CameraProperties get_camera_properties() { return _camera_properties; };

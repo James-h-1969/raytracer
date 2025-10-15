@@ -1,0 +1,2 @@
+- Camera class is implemented
+- PPM image reader and writer is implemented 

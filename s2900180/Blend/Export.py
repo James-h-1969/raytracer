@@ -99,11 +99,12 @@ def get_blend_object_as_dict():
                 "focal_length": float(cam.lens),
                 "sensor_width": float(cam.sensor_width),
                 "sensor_height": float(cam.sensor_height),
+                "sensor_fit":cam.sensor_fit,
                 "film_resolution": [
                     int(scene.render.resolution_x),
                     int(scene.render.resolution_y)
                 ],
-                
+
             })
 
         elif obj.type == "LIGHT" and obj.data.type == "POINT":

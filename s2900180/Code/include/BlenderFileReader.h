@@ -20,14 +20,17 @@ class BlenderFileReader {
   the file.
   */
   public: 
-    BlenderFileReader(std::string filepath) : _filepath(filepath), _camera_read(false) {
-      std::cout << "Created a blender file reader for " << _filepath << std::endl;
+    BlenderFileReader(std::string filepath) : _filepath(filepath) {
+      std::cout << "Created a blender file reader for " << _filepath << "\n\n";
     };
+
+    // function that reads the JSON of the blender file and creates the Camera object
     Camera& get_camera_from_blender_file();
+
+    // function that reads the JSON of the blender file and creates a vector of Mesh pointers
     std::vector<Mesh*> get_meshes_from_blender_file();
 
   private:
+    // blender file to read, likely found in ../../ASCII/file.json
     std::string _filepath;
-    Camera _camera;
-    bool _camera_read;
 };
