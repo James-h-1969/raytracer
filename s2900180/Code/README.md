@@ -13,6 +13,14 @@ make
 ./raytracer
 ```
 
+## Running unit tests
+While in the `build` folder, do the following 
+```bash
+cd test 
+
+./runTests
+```
+
 ## Converting images 
 When the final code outputs a `.ppm` file, you can convert it into a png using 
 ```bash

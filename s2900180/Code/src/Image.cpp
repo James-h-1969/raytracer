@@ -5,7 +5,7 @@ void PPMImageFile::read_image_from_file() {
     std::ifstream file(_filename);
     if (!file.is_open()) {
         std::cerr << "Error: Could not open the file.\n";
-        throw std::runtime_error("Could not open file");
+        throw std::runtime_error(_filename);
     }
 
     std::string format;
@@ -15,24 +15,23 @@ void PPMImageFile::read_image_from_file() {
         return;
     }
 
-    int width, height;
-    file >> width >> height;
+    file >> _width >> _height;
 
     int max_colour;
     file >> max_colour;
 
     _image_map.clear();
 
-    for (int i = 0; i < height; i++) {
+    for (int py = 0; py < _height; py++) {
         std::vector<Pixel> row = {};
-        for (int j = 0; j < width; j++) {
+        for (int px = 0; px < _width; px++) {
             int r, g, b;
             file >> r >> g >> b;
             
             // create the pixel from the row
             Pixel p;
-            p.px = j;
-            p.py = i;
+            p.px = px;
+            p.py = py;
             p.r = r;
             p.g = g;
             p.b = b;
@@ -78,14 +77,16 @@ void PPMImageFile::write_current_image_to_file(std::string export_filename) {
     out.close();    
 }
 
-void generate_ray_text_file(Camera& camera, std::string output_file_name) {
+void generate_ray_text_file(Camera camera, std::string output_file_name, int amount_of_rays) {
     const auto& props = camera.get_camera_properties();
     std::vector<Ray> rays;
 
-    // generate pixels and generate rays
-    for (int px = 0; px <= props.resolution_x; px += props.resolution_x / 5) {
-        for (int py = 0; py <= props.resolution_y; py += props.resolution_y / 5) {
-            Pixel p = Pixel(px, py, 0, 0, 0);
+    int step_x = std::max(1, static_cast<int>(props.resolution_x / amount_of_rays));
+    int step_y = std::max(1, static_cast<int>(props.resolution_y / amount_of_rays));
+
+    for (int px = 0; px <= props.resolution_x; px += step_x) {
+        for (int py = 0; py <= props.resolution_y; py += step_y) {
+            Pixel p(px, py, 0, 0, 0);
             Ray r = p.as_ray(props);
             rays.push_back(r);
         }

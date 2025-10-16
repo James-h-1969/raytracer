@@ -12,7 +12,11 @@ James Hocking, 2025
 #include <random>
 #include <vector>
 
-void generate_ray_text_file(Camera& camera);
+/*
+Function that iterates through pixels, converts them to rays, then writes them to an output 
+file. It creates a grid amount_of_rays * amount_of_rays spread across each dimension.
+*/
+void generate_ray_text_file(Camera camera, std::string output_file_name, int amount_of_rays);
 
 struct Pixel {
     /*
@@ -28,7 +32,7 @@ struct Pixel {
     float g;
     float b;
 
-    Ray& as_ray(CameraProperties props) {
+    Ray as_ray(CameraProperties props) {
         /*
         Function that converts the pixel into a ray based on the 
         Cameras properties, notably its positions and gaze.
@@ -67,7 +71,7 @@ struct Pixel {
 
 class PPMImageFile {
     public:
-        PPMImageFile(std::string filename): _filename(filename) {};
+        PPMImageFile(std::string filename): _filename(filename), _width(0), _height(0) {};
 
         Pixel get_pixel(int px, int py) {return _image_map.at(py).at(px); };
 
@@ -79,7 +83,14 @@ class PPMImageFile {
 
         // function to update the rgb values of a particular pixel based on its pixel coordinate
         void update_pixel(int px, int py, int r, int g, int b);
+
+        // getters 
+        int get_width() {return _width;};
+        int get_height() {return _height;};
+        
     private:
+        int _width;
+        int _height;
         std::string _filename;
         std::vector<std::vector<Pixel>> _image_map;
 };

@@ -1,6 +1,6 @@
 #include "BlenderFileReader.h"
 
-Camera& BlenderFileReader::get_camera_from_blender_file() {
+Camera BlenderFileReader::get_camera_from_blender_file() {
   // read the json file
   std::ifstream file(_filepath);
   if (!file.is_open()) {
@@ -64,8 +64,8 @@ Camera& BlenderFileReader::get_camera_from_blender_file() {
       resolution_y
   };
 
-  Camera _camera = Camera(camera_properties);
-  return _camera;
+  Camera camera = Camera(camera_properties);
+  return camera;
 }
 
 std::vector<Mesh*> BlenderFileReader::get_meshes_from_blender_file() {

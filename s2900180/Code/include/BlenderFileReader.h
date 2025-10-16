@@ -25,7 +25,7 @@ class BlenderFileReader {
     };
 
     // function that reads the JSON of the blender file and creates the Camera object
-    Camera& get_camera_from_blender_file();
+    Camera get_camera_from_blender_file();
 
     // function that reads the JSON of the blender file and creates a vector of Mesh pointers
     std::vector<Mesh*> get_meshes_from_blender_file();
