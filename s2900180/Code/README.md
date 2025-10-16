@@ -14,7 +14,7 @@ make
 ```
 
 ## Running unit tests
-While in the `build` folder, do the following 
+While in the `build` folder and _after_ building the project, do the following 
 ```bash
 cd test 
 
