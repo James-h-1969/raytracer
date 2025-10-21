@@ -20,6 +20,10 @@ struct Ray {
 
 struct Hit {
     Eigen::Vector3f intersection_point;
+    float distance_along_ray;
+    bool is_hit = false;
+
+    // maybe in the future add texture properties here
 };
 
 class Light {

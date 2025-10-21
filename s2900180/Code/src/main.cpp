@@ -14,27 +14,30 @@ int main() {
         return 1;
     }
 
-    for (int px = 0; px <= c.get_camera_properties().resolution_x; px += c.get_camera_properties().resolution_x/15) {
-        for (int py = 0; py <= c.get_camera_properties().resolution_y; py += c.get_camera_properties().resolution_y/15) {
+    for (int px = 0; px <= c.get_camera_properties().resolution_x; px += c.get_camera_properties().resolution_x/20) {
+        for (int py = 0; py <= c.get_camera_properties().resolution_y; py += c.get_camera_properties().resolution_y/20) {
             Pixel p(px, py, 0, 0, 0);
             Ray r = p.as_ray(c.get_camera_properties());
             bool hit = false;
-            Eigen::Vector3f intersection_point = {0.0, 0.0, 0.0};
+            std::string reason;
+            Hit h;
             for (const auto& mesh : meshes) {  
-                if (mesh->check_intersect(r, &intersection_point)) {
-                    hit = true;
-                } 
+                if (mesh->get_meshtype() == MeshType::CUBE) {
+                    if (mesh->check_intersect(r, &h)) {
+                        hit = true;
+                    } 
+                }
             }
             out << r.origin.x() << " " << r.origin.y() << " " << r.origin.z() << " "
             << r.direction.x() << " " << r.direction.y() << " " << r.direction.z();
             
             if (hit) {
                 out << " g ";
+                out << h.intersection_point[0] << " " << h.intersection_point[1] << " " << h.intersection_point[2] << "\n"; 
             } else {
                 out << " r ";
+                out << "0.0 0.0 0.0\n";
             }
-
-            out << intersection_point[0] << " " << intersection_point[1] << " " << intersection_point[2] << "\n"; 
         }
     }
 

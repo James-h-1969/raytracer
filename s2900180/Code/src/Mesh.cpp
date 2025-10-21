@@ -24,18 +24,54 @@ void Plane::show_properties() {
     }
 }
 
-bool Cube::check_intersect(Ray& ray, Eigen::Vector3f* intersection_point) {
-    // TODO. implement this 
-    return false;
+bool Cube::check_intersect(Ray& ray, Hit* hit) {
+    // Transform ray into local space
+    Ray local_ray;
+    Eigen::Matrix3f R_inv = euler_to_matrix(_rotation).transpose();
+    local_ray.origin = R_inv * (ray.origin - _translation);
+    local_ray.direction = R_inv * ray.direction;
+
+    // Slab test in local space 
+    float tmin = -std::numeric_limits<float>::infinity();
+    float tmax =  std::numeric_limits<float>::infinity();
+
+    Eigen::Vector3f half_size(_scale, _scale, _scale);
+    Eigen::Vector3f box_min = -half_size;
+    Eigen::Vector3f box_max =  half_size;
+
+    for (int i = 0; i < NUMBER_OF_AXIS; ++i) {
+        if (fabs(local_ray.direction[i]) < 1e-6f) {
+            if (local_ray.origin[i] < box_min[i] || local_ray.origin[i] > box_max[i])
+                return false;
+        } else {
+            float t1 = (box_min[i] - local_ray.origin[i]) / local_ray.direction[i];
+            float t2 = (box_max[i] - local_ray.origin[i]) / local_ray.direction[i];
+            if (t1 > t2) std::swap(t1, t2);
+            tmin = std::max(tmin, t1);
+            tmax = std::min(tmax, t2);
+            if (tmin > tmax) return false;
+        }
+    }
+
+    if (tmax < 0) return false;  // cube is behind ray
+
+    // Compute intersection point
+    float t_hit = tmin >= 0 ? tmin : tmax; // take the first valid intersection
+    Eigen::Vector3f local_hit = local_ray.origin + t_hit * local_ray.direction;
+    hit->intersection_point = euler_to_matrix(_rotation) * local_hit + _translation; // back to world space
+    hit->distance_along_ray = t_hit;
+    hit->is_hit = true;
+
+    return true;
 }
 
-bool Sphere::check_intersect(Ray& ray, Eigen::Vector3f* intersection_point) {
+bool Sphere::check_intersect(Ray& ray, Hit* hit) {
     // TODO. implement this  
     std::cout << "TESTING2" << std::endl;  
     return false;
 }
 
-bool Plane::check_intersect(Ray& ray, Eigen::Vector3f* intersection_point) {
+bool Plane::check_intersect(Ray& ray, Hit* hit) {
     float denom = ray.direction.dot(_normal);
     if (std::abs(denom) < 1e-6f) return false; // parallel
 
@@ -45,6 +81,7 @@ bool Plane::check_intersect(Ray& ray, Eigen::Vector3f* intersection_point) {
 
     Eigen::Vector3f ip = ray.origin + t * ray.direction;
 
+    // check that the intersection point is within the bounds of the plane
     auto same_sign = [](float a, float b, float tol = 1e-5f) {
         if (std::abs(a) < tol) a = 0.0f;
         if (std::abs(b) < tol) b = 0.0f;
@@ -59,7 +96,12 @@ bool Plane::check_intersect(Ray& ray, Eigen::Vector3f* intersection_point) {
     bool y_check = same_sign(v1[1], v2[1]);
     bool z_check = same_sign(v1[2], v2[2]);
 
-    *intersection_point = ip;
+    if (x_check && y_check && z_check) {
+        hit->intersection_point = ip;
+        hit->distance_along_ray = t;
+        hit->is_hit = true;
+        return true;
+    }
 
-    return (x_check && y_check && z_check);
+    return false;
 }
