@@ -58,7 +58,7 @@ struct Pixel {
         float d = props.focal_length;
         float u = ((static_cast<float>(px) / (props.resolution_x - 1)) - 0.5f) * width;
         float v = -height / 2 + (static_cast<float>(py)/ (props.resolution_y)) * height;
-        Eigen::Vector3f dir = (w_vec * d) + (u_vec * u) + (v_vec * v);
+        Eigen::Vector3f dir = (w_vec * d) + (-u_vec * u) + (-v_vec * v);
 
         // construct the ray
         Ray ray;
@@ -87,7 +87,7 @@ class PPMImageFile {
         // getters 
         int get_width() {return _width;};
         int get_height() {return _height;};
-        
+
     private:
         int _width;
         int _height;

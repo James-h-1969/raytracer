@@ -10,6 +10,7 @@ James Hocking, 2025
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <memory>
 #include <vector>
 #include <nlohmann/json.hpp>
 
@@ -28,7 +29,7 @@ class BlenderFileReader {
     Camera get_camera_from_blender_file();
 
     // function that reads the JSON of the blender file and creates a vector of Mesh pointers
-    std::vector<Mesh*> get_meshes_from_blender_file();
+    std::vector<std::unique_ptr<Mesh>> get_meshes_from_blender_file();
 
   private:
     // blender file to read, likely found in ../../ASCII/file.json

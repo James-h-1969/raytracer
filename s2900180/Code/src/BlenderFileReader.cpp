@@ -68,7 +68,7 @@ Camera BlenderFileReader::get_camera_from_blender_file() {
   return camera;
 }
 
-std::vector<Mesh*> BlenderFileReader::get_meshes_from_blender_file() {
+std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_file() {
   // read the json file
   std::ifstream file(_filepath);
   if (!file.is_open()) {
@@ -79,7 +79,7 @@ std::vector<Mesh*> BlenderFileReader::get_meshes_from_blender_file() {
   nlohmann::json file_json; 
   file >> file_json;
 
-  std::vector<Mesh*> meshes;
+  std::vector<std::unique_ptr<Mesh>> meshes;
 
   for (const auto& object : file_json["objects"]) {
       // Skip non-mesh types (like LIGHT, CAMERA, etc.)
@@ -100,9 +100,7 @@ std::vector<Mesh*> BlenderFileReader::get_meshes_from_blender_file() {
               object["rotation_euler_rad"][2]
           );
           float scale = object["scale_1d"];
-
-          Cube* mesh = new Cube(translation, rotation, scale, name, MeshType::CUBE);
-          meshes.push_back(mesh);
+          meshes.push_back(std::make_unique<Cube>(translation, rotation, scale, name, MeshType::CUBE));
       } 
       else if (shape == "SPHERE") {
           Eigen::Vector3f location(
@@ -111,9 +109,7 @@ std::vector<Mesh*> BlenderFileReader::get_meshes_from_blender_file() {
               object["location"][2]
           );
           float radius = object["radius"];
-
-          Sphere* mesh = new Sphere(location, radius, name, MeshType::SPHERE);
-          meshes.push_back(mesh);
+          meshes.push_back(std::make_unique<Sphere>(location, radius, name, MeshType::SPHERE));
       } 
       else if (shape == "PLANE") {
           std::array<Eigen::Vector3f, 4> corners;
@@ -125,9 +121,7 @@ std::vector<Mesh*> BlenderFileReader::get_meshes_from_blender_file() {
                   object["corners_world"][i][2]
               );
           }
-
-          Plane* mesh = new Plane(corners, name, MeshType::PLANE);
-          meshes.push_back(mesh);
+          meshes.push_back(std::make_unique<Plane>(corners, name, MeshType::PLANE));
       }
   }
   return meshes;

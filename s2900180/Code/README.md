@@ -16,9 +16,7 @@ make
 ## Running unit tests
 While in the `build` folder and _after_ building the project, do the following 
 ```bash
-cd test 
-
-./runTests
+./test/run_tests
 ```
 
 ## Converting images 
