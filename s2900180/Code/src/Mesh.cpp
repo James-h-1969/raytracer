@@ -66,9 +66,31 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
 }
 
 bool Sphere::check_intersect(Ray& ray, Hit* hit) {
-    // TODO. implement this  
-    std::cout << "TESTING2" << std::endl;  
-    return false;
+  // followed instructions from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
+ // find the two intersection points of the ray and the sphere 
+  float t0, t1; // the two intersection points 
+  Eigen::Vector3f L = _location - ray.origin;
+  float tca = L.dot(ray.direction);
+  if (tca < 0) return false;
+  float d2 = L.dot(L) - tca * tca;
+  if (d2 > _radius * _radius) return false;
+  float thc = std::sqrt(_radius * _radius - d2);
+  t0 = tca - thc;
+  t1 = tca + thc;
+  
+  // find which intersection is closer 
+  if (t0 > t1) std::swap(t0, t1);
+
+  if (t0 < 0) {
+    t0 = t1;
+    if (t0 < 0) return false;
+  }
+  
+  hit->intersection_point = ray.origin + t0 * ray.direction;
+  hit->distance_along_ray = t0;
+  hit->is_hit = true;
+
+  return true;
 }
 
 bool Plane::check_intersect(Ray& ray, Hit* hit) {
