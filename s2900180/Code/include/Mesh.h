@@ -34,6 +34,9 @@ class Mesh {
     virtual void show_properties() = 0;
     virtual enum MeshType get_meshtype() = 0;
     virtual bool check_intersect(Ray &r, Hit *hit) = 0;
+    virtual Eigen::Vector3f get_centroid() = 0;
+    virtual Eigen::Vector3f get_min_bound() = 0;
+    virtual Eigen::Vector3f get_max_bound() = 0;
     std::string get_name() { return _name; };
     virtual ~Mesh() = default;
 
@@ -51,7 +54,17 @@ class Cube : public Mesh {
     void show_properties() override;
     enum MeshType get_meshtype() { return MeshType::CUBE; };
     bool check_intersect(Ray &r, Hit *hit) override;
-
+    Eigen::Vector3f get_centroid() {
+      return _translation;
+    };
+    Eigen::Vector3f get_min_bound() {
+        float half_size = _scale * 0.5f;
+        return _translation - Eigen::Vector3f(half_size, half_size, half_size);
+    };
+    Eigen::Vector3f get_max_bound() {
+        float half_size = _scale * 0.5f;
+        return _translation + Eigen::Vector3f(half_size, half_size, half_size);
+    };
   private:
     Eigen::Vector3f _translation;
     Eigen::Vector3f _rotation;
@@ -65,6 +78,15 @@ public:
       : Mesh(std::move(name), type), _location(location), _radius(radius) {};
   void show_properties() override;
   enum MeshType get_meshtype() override { return MeshType::SPHERE;};
+  Eigen::Vector3f get_centroid() {
+    return _location;
+  };
+  Eigen::Vector3f get_min_bound() {
+        return _location - Eigen::Vector3f(_radius, _radius, _radius);
+  };  
+  Eigen::Vector3f get_max_bound() {
+      return _location + Eigen::Vector3f(_radius, _radius, _radius);
+  };
 
   /*
   Function in order to find the intersection between a ray and a sphere. This 
@@ -107,6 +129,26 @@ class Plane : public Mesh {
 
     // getters/setters
     enum MeshType get_meshtype() { return MeshType::PLANE; };
+
+    Eigen::Vector3f get_centroid() {
+      return _corners[PlaneCorners::BOTTOM_LEFT] + (_corners[PlaneCorners::TOP_RIGHT] - _corners[PlaneCorners::BOTTOM_LEFT]);
+    };
+
+      Eigen::Vector3f get_min_bound() {
+        Eigen::Vector3f min_bound = _corners[0];
+        for (int i = 1; i < NUMBER_OF_PLANE_CORNERS; i++) {
+            min_bound = min_bound.cwiseMin(_corners[i]);
+        }
+        return min_bound;
+    };
+    
+    Eigen::Vector3f get_max_bound() {
+        Eigen::Vector3f max_bound = _corners[0];
+        for (int i = 1; i < NUMBER_OF_PLANE_CORNERS; i++) {
+            max_bound = max_bound.cwiseMax(_corners[i]);
+        }
+        return max_bound;
+    };
 
   private:
     std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> _corners;

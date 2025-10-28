@@ -20,6 +20,7 @@ set(SOURCES
     src/Image.cpp
     src/Mesh.cpp
     src/BlenderFileReader.cpp
+    src/AccelerationHierarchy.cpp
 )
 
 # --- Core library (shared by main and tests) ---
