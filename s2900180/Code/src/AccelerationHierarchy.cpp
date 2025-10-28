@@ -71,3 +71,72 @@ void BoundingBoxHierarchyTree::split_bounding_box(
     split_bounding_box(node->left, left_meshes, depth + 1);
     split_bounding_box(node->right, right_meshes, depth + 1);
 }
+
+bool BoundingBoxNode::check_intersect(Ray ray, Hit* hit, int* counter) {
+    (*counter)++; 
+
+    float tmin = -std::numeric_limits<float>::infinity();
+    float tmax =  std::numeric_limits<float>::infinity();
+
+    for (int i = 0; i < 3; ++i) {
+        if (fabs(ray.direction[i]) < 1e-6f) {
+            if (ray.origin[i] < min[i] || ray.origin[i] > max[i])
+                return false;
+        } else {
+            float t1 = (min[i] - ray.origin[i]) / ray.direction[i];
+            float t2 = (max[i] - ray.origin[i]) / ray.direction[i];
+            if (t1 > t2) std::swap(t1, t2);
+            tmin = std::max(tmin, t1);
+            tmax = std::min(tmax, t2);
+            if (tmin > tmax) return false;
+        }
+    }
+
+    if (tmax < 0) return false; 
+
+    // --- Leaf node: check contained meshes ---
+    if (!left && !right) {
+        bool hit_any = false;
+        for (auto& mesh_ptr : meshes) {
+            (*counter)++; 
+            Mesh* mesh = mesh_ptr.get();   // get raw pointer
+            if (mesh->check_intersect(ray, hit)) {
+                hit_any = true;
+            }
+        }
+        return hit_any;
+    }
+
+    // --- Internal node: recurse ---
+    bool hit_left = left && left->check_intersect(ray, hit, counter);
+    bool hit_right = right && right->check_intersect(ray, hit, counter);
+
+    return hit_left || hit_right;
+}
+
+bool BoundingBoxHierarchyTree::check_intersect(Ray ray, Hit* hit, int* counter){
+    return (_root->check_intersect(ray, hit, counter));
+}
+
+void print_subtree(const std::unique_ptr<BoundingBoxNode>& node, int depth) {
+    if (!node->meshes.empty()) {
+        std::cout << "Current Leaf at depth " << depth << " has " 
+              << node->meshes.size() << " meshes" << std::endl;
+    } else {
+        std::cout << "Current Branch at depth " << depth << std::endl;
+    }
+    
+    std::cout << "Min val:\n" << node->min << std::endl;
+    std::cout << "Max val:\n" << node->max << "\n\n";
+    
+    if (node->left) {
+        print_subtree(node->left, depth + 1);
+    }
+    if (node->right) {
+        print_subtree(node->right, depth + 1);
+    }
+}
+
+void BoundingBoxHierarchyTree::print() {
+    print_subtree(_root, 0);
+}

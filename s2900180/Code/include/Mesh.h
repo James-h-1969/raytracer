@@ -10,6 +10,7 @@ James Hocking, 2025
 #include <Eigen/Dense>
 #include <array>
 #include <iostream>
+#include <fstream>
 #include <string>
 
 constexpr int NUMBER_OF_PLANE_CORNERS = 4;

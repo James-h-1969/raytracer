@@ -8,6 +8,9 @@ int main() {
 
   // create a acceleration hierarchy
   BoundingBoxHierarchyTree bbht = BoundingBoxHierarchyTree(std::move(meshes));
+  bbht.print();
+
+  
 
   return 0;
 }

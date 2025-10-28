@@ -65,7 +65,7 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
     return true;
 }
 
-bool Sphere::check_intersect(Ray& ray, Hit* hit) {
+bool Sphere::check_intersect(Ray& ray, Hit* hit) {   
     // find the two intersection points of the ray and the sphere 
     float t0, t1; 
     Eigen::Vector3f L = _location - ray.origin;

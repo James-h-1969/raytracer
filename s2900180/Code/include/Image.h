@@ -28,9 +28,9 @@ struct Pixel {
     int px;
     int py;
 
-    float r;
-    float g;
-    float b;
+    float r = 0.0f;
+    float g = 0.0f;
+    float b = 0.0f;
 
     Ray as_ray(CameraProperties props) {
         /*
@@ -91,6 +91,12 @@ class PPMImageFile {
             _image_map.resize(_height);
             for (auto& row : _image_map) {
                 row.resize(_width);
+            }
+            for (int px = 0; px < get_width(); px++) {
+                for (int py = 0; py < get_height(); py++) {
+                    _image_map.at(py).at(px).px = px;
+                    _image_map.at(py).at(px).py = py;
+                }
             }
             
         };
