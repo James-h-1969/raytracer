@@ -43,4 +43,5 @@ target_link_libraries(raytracer PRIVATE raytracer_lib)
 
 # --- Enable testing ---
 enable_testing()
-add_subdirectory(test)
+add_subdirectory(test/unit)
+add_subdirectory(test/speed)

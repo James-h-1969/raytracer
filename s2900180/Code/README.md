@@ -16,8 +16,15 @@ make
 ## Running unit tests
 While in the `build` folder and _after_ building the project, do the following 
 ```bash
-./test/run_tests
+./test/unit/run_tests
 ```
+
+## Running speed tests
+Similarly while in the `build` folder and _after_ building the project, do the following 
+```bash
+./test/speed/test_speed
+```
+
 
 ## Converting images 
 When the final code outputs a `.ppm` file, you can convert it into a png using 

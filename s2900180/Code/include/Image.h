@@ -84,6 +84,17 @@ class PPMImageFile {
         // function to update the rgb values of a particular pixel based on its pixel coordinate
         void update_pixel(int px, int py, int r, int g, int b);
 
+        // setter 
+        void set_width_and_height(int width, int height) {
+            _width=width;
+            _height=height;
+            _image_map.resize(_height);
+            for (auto& row : _image_map) {
+                row.resize(_width);
+            }
+            
+        };
+
         // getters 
         int get_width() {return _width;};
         int get_height() {return _height;};
