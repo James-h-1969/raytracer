@@ -61,7 +61,7 @@ int no_hierarchy_acceleration(CameraProperties props, PPMImageFile& image, std::
 }
 
 int main() {
-  std::string filepath = std::string(TEST_DATA_DIR) + "/lots_of_obj.json";
+  std::string filepath = std::string(TEST_DATA_DIR) + "/intersect_test.json";
   BlenderFileReader bfr = BlenderFileReader(filepath); 
   Camera c = bfr.get_camera_from_blender_file();
   CameraProperties props = c.get_camera_properties();

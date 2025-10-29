@@ -99,7 +99,11 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
               object["rotation_euler_rad"][1],
               object["rotation_euler_rad"][2]
           );
-          float scale = object["scale_1d"];
+          Eigen::Vector3f scale(
+              object["scale"][0],
+              object["scale"][1],
+              object["scale"][2]          
+          );
           meshes.push_back(std::make_unique<Cube>(translation, rotation, scale, name, MeshType::CUBE));
       } 
       else if (shape == "SPHERE") {
@@ -108,13 +112,22 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
               object["location"][1],
               object["location"][2]
           );
-          float radius = object["radius"];
-          meshes.push_back(std::make_unique<Sphere>(location, radius, name, MeshType::SPHERE));
+          Eigen::Vector3f rotation(
+              object["rotation_euler_rad"][0],
+              object["rotation_euler_rad"][1],
+              object["rotation_euler_rad"][2]
+          );
+          Eigen::Vector3f scale(
+              object["scale"][0],
+              object["scale"][1],
+              object["scale"][2]
+          );
+          meshes.push_back(std::make_unique<Sphere>(location, rotation, scale, name, MeshType::SPHERE));
       } 
       else if (shape == "PLANE") {
-          std::array<Eigen::Vector3f, 4> corners;
+          std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> corners;
 
-          for (int i = 0; i < 4; ++i) {
+          for (int i = 0; i < NUMBER_OF_PLANE_CORNERS; ++i) {
               corners[i] = Eigen::Vector3f(
                   object["corners_world"][i][0],
                   object["corners_world"][i][1],

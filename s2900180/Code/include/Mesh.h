@@ -48,72 +48,66 @@ class Mesh {
 
 class Cube : public Mesh {
   public:
-    Cube(Eigen::Vector3f translation, Eigen::Vector3f rotation, float scale,
-        std::string name, enum MeshType type)
-        : Mesh(std::move(name), type), _translation(translation),
-          _rotation(rotation), _scale(scale) {};
+    Cube(Eigen::Vector3f translation, Eigen::Vector3f rotation, Eigen::Vector3f scale, std::string name, enum MeshType type) : Mesh(std::move(name), type), _translation(translation), _rotation(rotation), _scale(scale) {};
+    
+    // print out the properties of the cube to std output 
     void show_properties() override;
-    enum MeshType get_meshtype() { return MeshType::CUBE; };
+
+    /*
+    Function to find the intersection between a ray and a cube. This is 
+    done by transforming the ray into the basis of the cube then running 
+    the 'slab test'.
+    */
     bool check_intersect(Ray &r, Hit *hit) override;
-    Eigen::Vector3f get_centroid() {
-      return _translation;
-    };
-    Eigen::Vector3f get_min_bound() {
-        float half_size = _scale * 0.5f;
-        return _translation - Eigen::Vector3f(half_size, half_size, half_size);
-    };
-    Eigen::Vector3f get_max_bound() {
-        float half_size = _scale * 0.5f;
-        return _translation + Eigen::Vector3f(half_size, half_size, half_size);
-    };
+
+    // getters/setters
+    enum MeshType get_meshtype() { return MeshType::CUBE; };
+    Eigen::Vector3f get_centroid() {return _translation;};
+    Eigen::Vector3f get_min_bound() {return _translation - Eigen::Vector3f(_scale[0]*0.5f, _scale[1]*0.5f, _scale[2]*0.5f);};
+    Eigen::Vector3f get_max_bound() {return _translation + Eigen::Vector3f(_scale[0]*0.5f, _scale[1]*0.5f, _scale[2]*0.5f);};
+
   private:
     Eigen::Vector3f _translation;
     Eigen::Vector3f _rotation;
-    float _scale;
+    Eigen::Vector3f _scale;
 };
 
 class Sphere : public Mesh {
-public:
-  Sphere(Eigen::Vector3f location, float radius, std::string name,
-         enum MeshType type)
-      : Mesh(std::move(name), type), _location(location), _radius(radius) {};
-  void show_properties() override;
-  enum MeshType get_meshtype() override { return MeshType::SPHERE;};
-  Eigen::Vector3f get_centroid() {
-    return _location;
-  };
-  Eigen::Vector3f get_min_bound() {
-        return _location - Eigen::Vector3f(_radius, _radius, _radius);
-  };  
-  Eigen::Vector3f get_max_bound() {
-      return _location + Eigen::Vector3f(_radius, _radius, _radius);
-  };
+  public:
+    Sphere(Eigen::Vector3f location, Eigen::Vector3f rotation, Eigen::Vector3f scale, std::string name, enum MeshType type) : Mesh(std::move(name), type), _location(location), _rotation(rotation), _scale(scale) {};
+    
+    // print out the properties of the sphere to the std output 
+    void show_properties() override;
 
-  /*
-  Function in order to find the intersection between a ray and a sphere. This 
-  function was copied from:
-  https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
-  which describes the geometric reasoning used to solve for the intersection point of the two shapes.
-  */
-  bool check_intersect(Ray &r, Hit *hit) override;
+    /*
+    Function in order to find the intersection between a ray and a sphere. This 
+    function was copied from:
+    https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
+    which describes the geometric reasoning used to solve for the intersection point of the two shapes.
+    */
+    bool check_intersect(Ray &r, Hit *hit) override;
 
-private:
-  Eigen::Vector3f _location;
-  float _radius;
+    // getters/setters
+    enum MeshType get_meshtype() override { return MeshType::SPHERE;};
+
+    Eigen::Vector3f get_centroid() {return _location;};
+    
+    Eigen::Vector3f get_min_bound() {return _location - Eigen::Vector3f(_scale[0], _scale[1], _scale[2]);};  
+    
+    Eigen::Vector3f get_max_bound() {return _location + Eigen::Vector3f(_scale[0], _scale[1], _scale[2]);};
+
+  private:
+    Eigen::Vector3f _location;
+    Eigen::Vector3f _rotation;
+    Eigen::Vector3f _scale;
 };
 
 class Plane : public Mesh {
   public:
-    Plane(const std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> &corners,
-          std::string name, MeshType type)
-        : Mesh(std::move(name), type), _corners(corners) {
+    Plane(const std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> &corners, std::string name, MeshType type): Mesh(std::move(name), type), _corners(corners) {
       // find a point on the plane and a normal vector
       _point = _corners[PlaneCorners::BOTTOM_LEFT];
-      _normal = (corners[PlaneCorners::BOTTOM_LEFT] -
-                corners[PlaneCorners::BOTTOM_RIGHT])
-                    .cross((corners[PlaneCorners::BOTTOM_LEFT] -
-                            corners[PlaneCorners::TOP_LEFT]))
-                    .normalized();
+      _normal = (corners[PlaneCorners::BOTTOM_LEFT] - corners[PlaneCorners::BOTTOM_RIGHT]).cross((corners[PlaneCorners::BOTTOM_LEFT] - corners[PlaneCorners::TOP_LEFT])).normalized();
     }
 
     // print out the properties of the plane to the std output

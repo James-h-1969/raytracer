@@ -5,14 +5,15 @@ void Cube::show_properties() {
     std::cout << "Type: Cube\n";
     std::cout << "Translation: " << _translation.transpose() << "\n";
     std::cout << "Rotation: " << _rotation.transpose() << "\n";
-    std::cout << "Scale: " << _scale << "\n";
+    std::cout << "Scale: " << _scale.transpose() << "\n";
 }
 
 void Sphere::show_properties() {
     std::cout << "\nMesh: " << _name << "\n";
     std::cout << "Type: Sphere\n";
     std::cout << "Location: " << _location.transpose() << "\n";
-    std::cout << "Radius: " << _radius << "\n";
+    std::cout << "Rotation: " << _rotation.transpose() << "\n";
+    std::cout << "Scale: " << _scale.transpose() << "\n";
 }
 
 void Plane::show_properties() {
@@ -25,72 +26,96 @@ void Plane::show_properties() {
 }
 
 bool Cube::check_intersect(Ray& ray, Hit* hit) {
-    // Transform ray into local space
-    Ray local_ray;
+    // Transform ray into local object space
     Eigen::Matrix3f R_inv = euler_to_matrix(_rotation).transpose();
-    local_ray.origin = R_inv * (ray.origin - _translation);
-    local_ray.direction = R_inv * ray.direction;
+    Eigen::Vector3f local_origin = R_inv * (ray.origin - _translation);
+    Eigen::Vector3f local_dir = R_inv * ray.direction;
 
-    // Slab test in local space 
-    float tmin = -std::numeric_limits<float>::infinity();
-    float tmax =  std::numeric_limits<float>::infinity();
+    // Half extents per axis (non-uniform scale)
+    Eigen::Vector3f half_size = _scale;
 
-    Eigen::Vector3f half_size(_scale, _scale, _scale);
     Eigen::Vector3f box_min = -half_size;
     Eigen::Vector3f box_max =  half_size;
 
-    for (int i = 0; i < NUMBER_OF_AXIS; ++i) {
-        if (fabs(local_ray.direction[i]) < 1e-6f) {
-            if (local_ray.origin[i] < box_min[i] || local_ray.origin[i] > box_max[i])
+    // Slab test
+    float tmin = -std::numeric_limits<float>::infinity();
+    float tmax =  std::numeric_limits<float>::infinity();
+
+    for (int i = 0; i < 3; ++i) {
+        if (fabs(local_dir[i]) < 1e-6f) {
+            // Ray is parallel to slab
+            if (local_origin[i] < box_min[i] || local_origin[i] > box_max[i])
                 return false;
         } else {
-            float t1 = (box_min[i] - local_ray.origin[i]) / local_ray.direction[i];
-            float t2 = (box_max[i] - local_ray.origin[i]) / local_ray.direction[i];
+            float t1 = (box_min[i] - local_origin[i]) / local_dir[i];
+            float t2 = (box_max[i] - local_origin[i]) / local_dir[i];
             if (t1 > t2) std::swap(t1, t2);
+
             tmin = std::max(tmin, t1);
             tmax = std::min(tmax, t2);
             if (tmin > tmax) return false;
         }
     }
 
-    if (tmax < 0) return false;  // cube is behind ray
+    if (tmax < 0) return false; // Box is behind the ray
 
-    // Compute intersection point
-    float t_hit = tmin >= 0 ? tmin : tmax; // take the first valid intersection
-    Eigen::Vector3f local_hit = local_ray.origin + t_hit * local_ray.direction;
-    hit->intersection_point = euler_to_matrix(_rotation) * local_hit + _translation; // back to world space
+    // Compute intersection point in local space
+    float t_hit = tmin >= 0 ? tmin : tmax;
+    Eigen::Vector3f local_hit = local_origin + t_hit * local_dir;
+
+    // Transform intersection back to world space
+    hit->intersection_point = euler_to_matrix(_rotation) * local_hit + _translation;
     hit->distance_along_ray = t_hit;
     hit->is_hit = true;
 
     return true;
 }
 
-bool Sphere::check_intersect(Ray& ray, Hit* hit) {   
-    // find the two intersection points of the ray and the sphere 
-    float t0, t1; 
-    Eigen::Vector3f L = _location - ray.origin;
-    float tca = L.dot(ray.direction);
-    if (tca < 0) return false;
-    float d2 = L.dot(L) - tca * tca;
-    if (d2 > _radius * _radius) return false;
-    float thc = std::sqrt(_radius * _radius - d2);
-    t0 = tca - thc;
-    t1 = tca + thc;
-    
-    // find which intersection is closer 
+
+bool Sphere::check_intersect(Ray& ray, Hit* hit) {
+    // Step 1: Transform ray into local object space
+    Eigen::Matrix3f R_inv = euler_to_matrix(_rotation).transpose();
+    Eigen::Vector3f local_origin = R_inv * (ray.origin - _location);
+    Eigen::Vector3f local_dir = R_inv * ray.direction;
+
+    // Step 2: Apply inverse scale (turn ellipsoid into a unit sphere)
+    Eigen::Vector3f inv_scale = _scale.cwiseInverse();
+    local_origin = local_origin.cwiseProduct(inv_scale);
+    local_dir = local_dir.cwiseProduct(inv_scale);
+
+    // Step 3: Ray-sphere intersection in unit sphere space
+    float a = local_dir.dot(local_dir);
+    float b = 2.0f * local_origin.dot(local_dir);
+    float c = local_origin.dot(local_origin) - 1.0f; // radius = 1 after scaling
+
+    float discriminant = b * b - 4.0f * a * c;
+    if (discriminant < 0.0f) return false;
+
+    float sqrt_disc = std::sqrt(discriminant);
+    float t0 = (-b - sqrt_disc) / (2.0f * a);
+    float t1 = (-b + sqrt_disc) / (2.0f * a);
     if (t0 > t1) std::swap(t0, t1);
 
     if (t0 < 0) {
         t0 = t1;
         if (t0 < 0) return false;
     }
-    
-    hit->intersection_point = ray.origin + t0 * ray.direction;
+
+    // Step 4: Compute intersection point in local space
+    Eigen::Vector3f local_hit = local_origin + t0 * local_dir;
+
+    // Step 5: Transform back to world space
+    Eigen::Vector3f hit_world = (euler_to_matrix(_rotation) * 
+                                (local_hit.cwiseProduct(_scale))) + _location;
+
+    hit->intersection_point = hit_world;
     hit->distance_along_ray = t0;
     hit->is_hit = true;
 
     return true;
 }
+
+
 
 bool Plane::check_intersect(Ray& ray, Hit* hit) {
     float denom = ray.direction.dot(_normal);

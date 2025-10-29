@@ -11,7 +11,7 @@ import mathutils
 import math
 
 ### PARAMETERS: Only change here 
-OUTPUT_FILE_PATH = "/home/jhocking542/computer-graphics/raytracer/s2900180/ASCII/output_test.json"
+OUTPUT_FILE_PATH = "/home/jhocking542/computer-graphics/raytracer/s2900180/ASCII/sphere_skew.json"
 ################################
 
 def vector_to_list(v):
@@ -34,27 +34,28 @@ def get_mesh_type(obj):
     elif verts == 8 and faces == 6:
         return "CUBE"
     elif verts > 12:
-        # check approximate spherical shape
-        verts_world = [obj.matrix_world @ v.co for v in mesh.vertices]
-        centroid = sum(verts_world, mathutils.Vector()) / len(verts_world)
-        dists = [(v - centroid).length for v in verts_world]
-        mean = sum(dists) / len(dists)
-        std = (sum((d - mean) ** 2 for d in dists) / len(dists)) ** 0.5
-        if std / mean < 0.05:
-            return "SPHERE"
+        return "SPHERE"
     return "OTHER"
 
 def get_mesh_data(obj):
     """Extract geometric info depending on mesh type."""
     mesh_type = get_mesh_type(obj)
     if mesh_type == "SPHERE":
+        # Get transform components
+        loc = obj.matrix_world.to_translation()
+        rot = obj.rotation_euler  # same as GUI values (in radians)
+        scale = obj.scale
+
+        # Compute radius using world-space vertices
         verts_world = [obj.matrix_world @ v.co for v in obj.data.vertices]
         origin = obj.matrix_world.to_translation()
         radius = max((v - origin).length for v in verts_world)
+
         return {
             "shape": "SPHERE",
-            "location": vector_to_list(origin),
-            "radius": radius,
+            "location": vector_to_list(loc),
+            "rotation_euler_rad": [float(rot.x), float(rot.y), float(rot.z)],  # same as GUI
+            "scale": vector_to_list(scale),
         }
     elif mesh_type == "CUBE":
         loc = obj.matrix_world.to_translation()
