@@ -59,13 +59,14 @@ def get_mesh_data(obj):
         }
     elif mesh_type == "CUBE":
         loc = obj.matrix_world.to_translation()
-        rot = obj.rotation_euler
-        scale = obj.scale
+        rot = obj.rotation_euler  # same rotation as shown in GUI (in radians)
+        scale = obj.scale         # 3D scale vector
+
         return {
             "shape": "CUBE",
             "translation": vector_to_list(loc),
             "rotation_euler_rad": [float(rot.x), float(rot.y), float(rot.z)],
-            "scale_1d": float(scale.x),
+            "scale": vector_to_list(scale),  # now exports full 3D scale
         }
     elif mesh_type == "PLANE":
         verts_world = [obj.matrix_world @ v.co for v in obj.data.vertices]

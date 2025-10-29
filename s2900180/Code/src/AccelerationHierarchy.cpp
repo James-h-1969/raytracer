@@ -1,27 +1,31 @@
 #include "AccelerationHierarchy.h"
 
-BoundingBoxHierarchyTree::BoundingBoxHierarchyTree(
-    std::vector<std::unique_ptr<Mesh>> meshes
-) {
-    _root = std::make_unique<BoundingBoxNode>();
-    
+void find_max_and_min(Eigen::Vector3f& max, Eigen::Vector3f& min, const std::vector<std::unique_ptr<Mesh>>& meshes) {
     Eigen::Vector3f global_min(std::numeric_limits<float>::max(),
                                std::numeric_limits<float>::max(),
                                std::numeric_limits<float>::max());
     Eigen::Vector3f global_max(-std::numeric_limits<float>::max(),
                                -std::numeric_limits<float>::max(),
                                -std::numeric_limits<float>::max());
-    
+
     for (const auto& mesh : meshes) {
         Eigen::Vector3f mesh_min = mesh->get_min_bound();
         Eigen::Vector3f mesh_max = mesh->get_max_bound();
         global_min = global_min.cwiseMin(mesh_min);
         global_max = global_max.cwiseMax(mesh_max);
     }
+
+    max = global_max;
+    min = global_min;
+}
+
+
+BoundingBoxHierarchyTree::BoundingBoxHierarchyTree(
+    std::vector<std::unique_ptr<Mesh>> meshes
+) {
+    _root = std::make_unique<BoundingBoxNode>();
     
-    _root->min = global_min;
-    _root->max = global_max;
-    
+    find_max_and_min(_root->max, _root->min, meshes);   
     split_bounding_box(_root, meshes, 0);
 }
 
@@ -49,25 +53,26 @@ void BoundingBoxHierarchyTree::split_bounding_box(
     std::vector<std::unique_ptr<Mesh>> right_meshes;
     
     for (auto& mesh : meshes) {
-        float centroid = mesh->get_centroid()[axis];
-        if (centroid < split_pos) {
+        float mesh_min = mesh->get_min_bound()[axis];
+        float mesh_max = mesh->get_max_bound()[axis];
+
+        // If mesh intersects the split plane, put in both children
+        if (mesh_max <= split_pos) {
             left_meshes.push_back(std::move(mesh));
+        } else if (mesh_min >= split_pos) {
+            right_meshes.push_back(std::move(mesh));
         } else {
+            // Straddles plane -> clone for both children
+            left_meshes.push_back(mesh->clone());
             right_meshes.push_back(std::move(mesh));
         }
     }
     
     node->left = std::make_unique<BoundingBoxNode>();
     node->right = std::make_unique<BoundingBoxNode>();
-    
-    node->left->min = node->min;
-    node->left->max = node->max;
-    node->left->max[axis] = split_pos;
-    
-    node->right->min = node->min;
-    node->right->max = node->max;
-    node->right->min[axis] = split_pos;
-    
+
+    find_max_and_min(node->left->max, node->left->min, left_meshes);
+    find_max_and_min(node->right->max, node->right->min, right_meshes);   
     split_bounding_box(node->left, left_meshes, depth + 1);
     split_bounding_box(node->right, right_meshes, depth + 1);
 }
@@ -98,6 +103,7 @@ bool BoundingBoxNode::check_intersect(Ray ray, Hit* hit, int* counter) {
     if (!left && !right) {
         bool hit_any = false;
         for (auto& mesh_ptr : meshes) {
+            // mesh_ptr->show_properties();
             (*counter)++; 
             Mesh* mesh = mesh_ptr.get();   // get raw pointer
             if (mesh->check_intersect(ray, hit)) {

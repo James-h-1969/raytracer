@@ -10,6 +10,7 @@ James Hocking, 2025
 #include <Eigen/Dense>
 #include <array>
 #include <iostream>
+#include <memory>
 #include <fstream>
 #include <string>
 
@@ -38,6 +39,7 @@ class Mesh {
     virtual Eigen::Vector3f get_centroid() = 0;
     virtual Eigen::Vector3f get_min_bound() = 0;
     virtual Eigen::Vector3f get_max_bound() = 0;
+    virtual std::unique_ptr<Mesh> clone() const = 0;
     std::string get_name() { return _name; };
     virtual ~Mesh() = default;
 
@@ -62,9 +64,14 @@ class Cube : public Mesh {
 
     // getters/setters
     enum MeshType get_meshtype() { return MeshType::CUBE; };
+
     Eigen::Vector3f get_centroid() {return _translation;};
+
     Eigen::Vector3f get_min_bound() {return _translation - Eigen::Vector3f(_scale[0]*0.5f, _scale[1]*0.5f, _scale[2]*0.5f);};
+
     Eigen::Vector3f get_max_bound() {return _translation + Eigen::Vector3f(_scale[0]*0.5f, _scale[1]*0.5f, _scale[2]*0.5f);};
+
+    std::unique_ptr<Mesh> clone() const override {return std::make_unique<Cube>(*this);}
 
   private:
     Eigen::Vector3f _translation;
@@ -95,6 +102,8 @@ class Sphere : public Mesh {
     Eigen::Vector3f get_min_bound() {return _location - Eigen::Vector3f(_scale[0], _scale[1], _scale[2]);};  
     
     Eigen::Vector3f get_max_bound() {return _location + Eigen::Vector3f(_scale[0], _scale[1], _scale[2]);};
+
+    std::unique_ptr<Mesh> clone() const override {return std::make_unique<Sphere>(*this);}
 
   private:
     Eigen::Vector3f _location;
@@ -144,6 +153,8 @@ class Plane : public Mesh {
         }
         return max_bound;
     };
+
+    std::unique_ptr<Mesh> clone() const override {return std::make_unique<Plane>(*this);}
 
   private:
     std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> _corners;

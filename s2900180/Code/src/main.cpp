@@ -2,7 +2,6 @@
 #include "AccelerationHierarchy.h"
 
 int main() {
-  // read the blender file
   BlenderFileReader bfr = BlenderFileReader("../../ASCII/sphere_skew.json");
   Camera c = bfr.get_camera_from_blender_file();
   CameraProperties props = c.get_camera_properties();
@@ -10,6 +9,7 @@ int main() {
 
   // create a acceleration hierarchy
   BoundingBoxHierarchyTree bbht = BoundingBoxHierarchyTree(std::move(meshes));
+  
   PPMImageFile image("");
   image.set_width_and_height(props.resolution_x, props.resolution_y);  
   
@@ -26,6 +26,7 @@ int main() {
   }
 
   image.write_current_image_to_file("../../Output/skew.ppm");
+
 
   return 0;
 }
