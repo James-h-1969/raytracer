@@ -53,17 +53,10 @@ void BoundingBoxHierarchyTree::split_bounding_box(
     std::vector<std::unique_ptr<Mesh>> right_meshes;
     
     for (auto& mesh : meshes) {
-        float mesh_min = mesh->get_min_bound()[axis];
-        float mesh_max = mesh->get_max_bound()[axis];
-
-        // If mesh intersects the split plane, put in both children
-        if (mesh_max <= split_pos) {
+        float centroid = mesh->get_centroid()[axis];
+        if (centroid < split_pos) {
             left_meshes.push_back(std::move(mesh));
-        } else if (mesh_min >= split_pos) {
-            right_meshes.push_back(std::move(mesh));
         } else {
-            // Straddles plane -> clone for both children
-            left_meshes.push_back(mesh->clone());
             right_meshes.push_back(std::move(mesh));
         }
     }

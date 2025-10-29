@@ -67,9 +67,9 @@ class Cube : public Mesh {
 
     Eigen::Vector3f get_centroid() {return _translation;};
 
-    Eigen::Vector3f get_min_bound() {return _translation - Eigen::Vector3f(_scale[0]*0.5f, _scale[1]*0.5f, _scale[2]*0.5f);};
+    Eigen::Vector3f get_min_bound() {return _translation - Eigen::Vector3f(_scale[0], _scale[1], _scale[2]);};
 
-    Eigen::Vector3f get_max_bound() {return _translation + Eigen::Vector3f(_scale[0]*0.5f, _scale[1]*0.5f, _scale[2]*0.5f);};
+    Eigen::Vector3f get_max_bound() {return _translation + Eigen::Vector3f(_scale[0], _scale[1], _scale[2]);};
 
     std::unique_ptr<Mesh> clone() const override {return std::make_unique<Cube>(*this);}
 
