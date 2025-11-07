@@ -1,2 +1,4 @@
 - Camera class is implemented
 - PPM image reader and writer is implemented 
+- Intersection tests are implemented 
+- Bounding Box Hierarchy acceleration is implemented

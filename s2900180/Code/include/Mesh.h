@@ -6,6 +6,7 @@ James Hocking, 2025
 #pragma once
 
 #include "Helpers.h"
+#include "Light.h"
 #include "Image.h"
 #include <Eigen/Dense>
 #include <array>

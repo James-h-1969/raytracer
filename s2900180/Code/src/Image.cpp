@@ -54,18 +54,8 @@ void PPMImageFile::write_current_image_to_file(std::string export_filename) {
         return;
     }
 
-    int max_rgb_value = 0;
-    for (int px = 0; px < _image_map.at(0).size(); px++) {
-        for (int py = 0; py < _image_map.size(); py++) {
-            Pixel pixel = _image_map.at(py).at(px);
-            if (pixel.r > max_rgb_value) {max_rgb_value = pixel.r;};
-            if (pixel.g > max_rgb_value) {max_rgb_value = pixel.b;};
-            if (pixel.b > max_rgb_value) {max_rgb_value = pixel.b;};
-        }
-    }
-
     // header
-    out << "P3\n" << _image_map.at(0).size() << " " << _image_map.size() << "\n" << max_rgb_value << "\n";
+    out << "P3\n" << _image_map.at(0).size() << " " << _image_map.size() << "\n255\n";
 
     for (std::vector<Pixel> row: _image_map) {
         for (Pixel p: row) {

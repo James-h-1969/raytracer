@@ -139,3 +139,39 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
   }
   return meshes;
 }
+
+Light BlenderFileReader::get_light_from_blender_file() {
+  // read the json file
+  std::ifstream file(_filepath);
+  if (!file.is_open()) {
+    std::cerr << "Error: Could not open the file.\n";
+    throw std::runtime_error("Could not open file");
+  }
+
+  nlohmann::json file_json; 
+  file >> file_json;
+
+  // seperate relevant camera json
+  nlohmann::json light_json; 
+  for (const auto& object : file_json["objects"]) {
+    if (object["type"] == "LIGHT") {
+      light_json = object;
+    }
+  }
+  if (light_json.is_null()) {
+    throw std::runtime_error("No light object found in file");
+  }
+
+  Eigen::Vector3f position(
+    light_json["location"][0],
+    light_json["location"][1],
+    light_json["location"][2]
+  );
+
+  Light l(
+    position,
+    light_json["radiant_intensity"]
+  );
+
+  return l;
+};
