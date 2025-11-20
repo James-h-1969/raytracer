@@ -33,7 +33,7 @@ class BlenderFileReader {
     std::vector<std::unique_ptr<Mesh>> get_meshes_from_blender_file();
 
     // function that reads the JSON of the blender file and creates a light 
-    Light get_light_from_blender_file();
+    std::vector<Light> get_lights_from_blender_file();
 
   private:
     // blender file to read, likely found in ../../ASCII/file.json

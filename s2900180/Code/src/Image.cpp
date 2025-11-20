@@ -32,19 +32,16 @@ void PPMImageFile::read_image_from_file() {
             Pixel p;
             p.px = px;
             p.py = py;
-            p.r = r;
-            p.g = g;
-            p.b = b;
+            Colour colour(r, g, b);
+            p.colour = colour;
             row.push_back(p);
         }
         _image_map.push_back(row);
     }
 }
 
-void PPMImageFile::update_pixel(int px, int py, int r, int g, int b) {
-    _image_map.at(py).at(px).r = r;
-    _image_map.at(py).at(px).g = g;
-    _image_map.at(py).at(px).b = b;
+void PPMImageFile::update_pixel(int px, int py, struct Colour new_colour) {
+    _image_map.at(py).at(px).colour = new_colour;
 }
 
 void PPMImageFile::write_current_image_to_file(std::string export_filename) {
@@ -59,7 +56,7 @@ void PPMImageFile::write_current_image_to_file(std::string export_filename) {
 
     for (std::vector<Pixel> row: _image_map) {
         for (Pixel p: row) {
-            out << p.r << " " << p.g << " " << p.b << "  ";
+            out << p.colour.r << " " << p.colour.g << " " << p.colour.b << "  ";
         }
         out << "\n";
     }
@@ -76,7 +73,7 @@ void generate_ray_text_file(Camera camera, std::string output_file_name, int amo
 
     for (int px = 0; px <= props.resolution_x; px += step_x) {
         for (int py = 0; py <= props.resolution_y; py += step_y) {
-            Pixel p(px, py, 0, 0, 0);
+            Pixel p(px, py);
             Ray r = p.as_ray(props);
             rays.push_back(r);
         }

@@ -32,3 +32,9 @@ inline Eigen::Matrix3f euler_to_matrix(Eigen::Vector3f euler) {
     return Rx * Ry * Rz;
 }
 
+struct Colour {
+    int r = 0;
+    int g = 0;
+    int b = 0;
+};
+

@@ -25,12 +25,10 @@ struct Pixel {
         image grid, as well as the colour in rgb.
     */
 
-    int px;
-    int py;
+    float px;
+    float py;
 
-    float r = 0.0f;
-    float g = 0.0f;
-    float b = 0.0f;
+    Colour colour{0, 0, 0};
 
     Ray as_ray(CameraProperties props) {
         /*
@@ -82,7 +80,7 @@ class PPMImageFile {
         void write_current_image_to_file(std::string export_filename);
 
         // function to update the rgb values of a particular pixel based on its pixel coordinate
-        void update_pixel(int px, int py, int r, int g, int b);
+        void update_pixel(int px, int py, struct Colour colour);
 
         // setter 
         void set_width_and_height(int width, int height) {

@@ -104,7 +104,25 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
               object["scale"][1],
               object["scale"][2]          
           );
-          meshes.push_back(std::make_unique<Cube>(translation, rotation, scale, name, MeshType::CUBE));
+          float ka = object["material"]["ka"];
+          Eigen::Vector3f kd(
+              object["material"]["kd"][0],
+              object["material"]["kd"][1],
+              object["material"]["kd"][2]
+          );
+          Eigen::Vector3f ks(
+              object["material"]["ks"][0],
+              object["material"]["ks"][1],
+              object["material"]["ks"][2]
+          );
+          float shininess = object["material"]["shininess"];
+          Colour base_colour{
+            object["material"]["base_color"][0], 
+            object["material"]["base_color"][1],
+            object["material"]["base_color"][2]
+          };
+          float reflectivity = object["material"]["reflectivity"];
+          meshes.push_back(std::make_unique<Cube>(translation, rotation, scale, name, MeshType::CUBE, kd, ka, ks, shininess, base_colour, reflectivity));
       } 
       else if (shape == "SPHERE") {
           Eigen::Vector3f location(
@@ -122,7 +140,25 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
               object["scale"][1],
               object["scale"][2]
           );
-          meshes.push_back(std::make_unique<Sphere>(location, rotation, scale, name, MeshType::SPHERE));
+          float ka = object["material"]["ka"];
+          Eigen::Vector3f kd(
+              object["material"]["kd"][0],
+              object["material"]["kd"][1],
+              object["material"]["kd"][2]
+          );
+          Eigen::Vector3f ks(
+              object["material"]["ks"][0],
+              object["material"]["ks"][1],
+              object["material"]["ks"][2]
+          );
+          float shininess = object["material"]["shininess"];
+          Colour base_colour{
+            object["material"]["base_color"][0], 
+            object["material"]["base_color"][1],
+            object["material"]["base_color"][2]
+          };
+          float reflectivity = object["material"]["reflectivity"];
+          meshes.push_back(std::make_unique<Sphere>(location, rotation, scale, name, MeshType::SPHERE, kd, ka, ks, shininess, base_colour, reflectivity));
       } 
       else if (shape == "PLANE") {
           std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> corners;
@@ -134,13 +170,31 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
                   object["corners_world"][i][2]
               );
           }
-          meshes.push_back(std::make_unique<Plane>(corners, name, MeshType::PLANE));
+          float ka = object["material"]["ka"];
+          Eigen::Vector3f kd(
+              object["material"]["kd"][0],
+              object["material"]["kd"][1],
+              object["material"]["kd"][2]
+          );
+          Eigen::Vector3f ks(
+              object["material"]["ks"][0],
+              object["material"]["ks"][1],
+              object["material"]["ks"][2]
+          );
+          float shininess = object["material"]["shininess"];
+          Colour base_colour{
+            object["material"]["base_color"][0], 
+            object["material"]["base_color"][1],
+            object["material"]["base_color"][2]
+          };
+          float reflectivity = object["material"]["reflectivity"];
+          meshes.push_back(std::make_unique<Plane>(corners, name, MeshType::PLANE, kd, ka, ks, shininess, base_colour, reflectivity));
       }
   }
   return meshes;
 }
 
-Light BlenderFileReader::get_light_from_blender_file() {
+std::vector<Light> BlenderFileReader::get_lights_from_blender_file() {
   // read the json file
   std::ifstream file(_filepath);
   if (!file.is_open()) {
@@ -151,27 +205,19 @@ Light BlenderFileReader::get_light_from_blender_file() {
   nlohmann::json file_json; 
   file >> file_json;
 
-  // seperate relevant camera json
-  nlohmann::json light_json; 
+  
+  std::vector<Light> l;
   for (const auto& object : file_json["objects"]) {
     if (object["type"] == "LIGHT") {
-      light_json = object;
+        Eigen::Vector3f position(
+          object["location"][0],
+          object["location"][1],
+          object["location"][2]
+        );
+        Light curr_l(position, object["radiant_intensity"]);
+        l.push_back(curr_l);
     }
   }
-  if (light_json.is_null()) {
-    throw std::runtime_error("No light object found in file");
-  }
-
-  Eigen::Vector3f position(
-    light_json["location"][0],
-    light_json["location"][1],
-    light_json["location"][2]
-  );
-
-  Light l(
-    position,
-    light_json["radiant_intensity"]
-  );
 
   return l;
 };

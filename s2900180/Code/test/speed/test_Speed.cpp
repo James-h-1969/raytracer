@@ -7,6 +7,8 @@
 #include <Eigen/Dense>
 #include <vector>
 
+struct Colour white{255, 255, 255};
+
 void measureExecutionTime(
     int (*func)(CameraProperties, PPMImageFile&, std::vector<std::unique_ptr<Mesh>>&),
     CameraProperties props, PPMImageFile& image, std::vector<std::unique_ptr<Mesh>>& meshes) {
@@ -31,7 +33,7 @@ int hierarchy_acceleration(CameraProperties props, PPMImageFile& image, std::vec
         Ray r = p.as_ray(props);
         Hit h;
         if (bbht.check_intersect(r, &h, &counter)) {
-          image.update_pixel(px, py, 255, 255, 255);
+          image.update_pixel(px, py, white);
         }
       }
     }
@@ -51,7 +53,7 @@ int no_hierarchy_acceleration(CameraProperties props, PPMImageFile& image, std::
       for (auto& mesh : meshes) {
           Hit h;
           if (mesh->check_intersect(r, &h)) {
-            image.update_pixel(px, py, 255, 255, 255);
+            image.update_pixel(px, py, white);
           };
           counter++;
       }

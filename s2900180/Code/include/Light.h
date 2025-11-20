@@ -7,7 +7,13 @@ James Hocking, 2025
 
 #include <Eigen/Dense>
 #include "Camera.h"
+#include "Mesh.h"
+#include "AccelerationHierarchy.h"
 #include <iostream>
+#include <memory>
+
+class Mesh;
+class BoundingBoxHierarchyTree;
 
 struct Ray {
     Eigen::Vector3f origin;
@@ -25,11 +31,12 @@ struct Hit {
     float distance_along_ray;
     bool is_hit = false;
 
-    // maybe in the future add texture properties here
+    Mesh* mesh;
 };
 
 class Light {
     public:
+        Light() {;};
         Light(Eigen::Vector3f location, float radiant_intensity) : 
             _location(location), _radiant_intensity(radiant_intensity) {;};
 
@@ -42,5 +49,5 @@ class Light {
         float _radiant_intensity;
 };
 
-void update_hit_from_intersection(Hit* h, Eigen::Vector3f intersection_point, Eigen::Vector3f normal, float distance_along_ray);
-Eigen::Vector3f shade(Hit* hit, Light* light, CameraProperties* props, float kd, float ks, float shininess, Eigen::Vector3f base_colour);
+void update_hit_from_intersection(Hit* h, Eigen::Vector3f intersection_point, Eigen::Vector3f normal, float distance_along_ray, Mesh* mesh);
+Eigen::Vector3f shade(Hit* hit, std::vector<Light> lights, CameraProperties* props, float Ia, std::unique_ptr<BoundingBoxHierarchyTree>& bbht, int depth);

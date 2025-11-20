@@ -7,7 +7,6 @@ James Hocking, 2025
 
 #include "Helpers.h"
 #include "Light.h"
-#include "Image.h"
 #include <Eigen/Dense>
 #include <array>
 #include <iostream>
@@ -33,25 +32,39 @@ enum class MeshType {
 
 class Mesh {
   public:
-    Mesh(std::string name, MeshType type) : _name(std::move(name)), _type(type) {}
+    Mesh(std::string name, MeshType type, Eigen::Vector3f kd, float ka, Eigen::Vector3f ks, float shininess, Colour base_colour, float reflectivity)
+      : _name(std::move(name)), _type(type), _kd(kd), _ka(ka), _ks(ks), _shininess(shininess), _base_colour(base_colour), _reflectivity(reflectivity) {}
     virtual void show_properties() = 0;
     virtual enum MeshType get_meshtype() = 0;
-    virtual bool check_intersect(Ray &r, Hit *hit) = 0;
+    virtual bool check_intersect(struct Ray &r, struct Hit *hit) = 0;
     virtual Eigen::Vector3f get_centroid() = 0;
     virtual Eigen::Vector3f get_min_bound() = 0;
     virtual Eigen::Vector3f get_max_bound() = 0;
     virtual std::unique_ptr<Mesh> clone() const = 0;
     std::string get_name() { return _name; };
+    Eigen::Vector3f get_kd() {return _kd;};
+    float get_ka() {return _ka;};
+    Eigen::Vector3f get_ks() {return _ks;};
+    float get_shininess() {return _shininess;};
+    float get_reflectivity() {return _reflectivity;};
+    Colour get_base_colour() {return _base_colour;};
     virtual ~Mesh() = default;
 
   protected:
+    float _ka;
+    Eigen::Vector3f _kd;
+    Eigen::Vector3f _ks;
+    float _shininess;
+    float _reflectivity;
+    Colour _base_colour;
     std::string _name;
     enum MeshType _type;
 };
 
 class Cube : public Mesh {
   public:
-    Cube(Eigen::Vector3f translation, Eigen::Vector3f rotation, Eigen::Vector3f scale, std::string name, enum MeshType type) : Mesh(std::move(name), type), _translation(translation), _rotation(rotation), _scale(scale) {};
+    Cube(Eigen::Vector3f translation, Eigen::Vector3f rotation, Eigen::Vector3f scale, std::string name, enum MeshType type, Eigen::Vector3f kd, float ka, Eigen::Vector3f ks, float shininess, struct Colour base_colour, float reflectivity)
+      : Mesh(std::move(name), type, kd, ka, ks, shininess, base_colour, reflectivity), _translation(translation), _rotation(rotation), _scale(scale) {};
     
     // print out the properties of the cube to std output 
     void show_properties() override;
@@ -82,7 +95,8 @@ class Cube : public Mesh {
 
 class Sphere : public Mesh {
   public:
-    Sphere(Eigen::Vector3f location, Eigen::Vector3f rotation, Eigen::Vector3f scale, std::string name, enum MeshType type) : Mesh(std::move(name), type), _location(location), _rotation(rotation), _scale(scale) {};
+    Sphere(Eigen::Vector3f location, Eigen::Vector3f rotation, Eigen::Vector3f scale, std::string name, enum MeshType type, Eigen::Vector3f kd, float ka, Eigen::Vector3f ks, float shininess, struct Colour base_colour, float reflectivity)
+      : Mesh(std::move(name), type, kd, ka, ks, shininess, base_colour, reflectivity), _location(location), _rotation(rotation), _scale(scale) {};
     
     // print out the properties of the sphere to the std output 
     void show_properties() override;
@@ -114,7 +128,8 @@ class Sphere : public Mesh {
 
 class Plane : public Mesh {
   public:
-    Plane(const std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> &corners, std::string name, MeshType type): Mesh(std::move(name), type), _corners(corners) {
+    Plane(const std::array<Eigen::Vector3f, NUMBER_OF_PLANE_CORNERS> &corners, std::string name, MeshType type, Eigen::Vector3f kd, float ka, Eigen::Vector3f ks, float shininess, struct Colour base_colour, float reflectivity)
+      : Mesh(std::move(name), type, kd, ka, ks, shininess, base_colour, reflectivity), _corners(corners) {
       // find a point on the plane and a normal vector
       _point = _corners[PlaneCorners::BOTTOM_LEFT];
       _normal = (corners[PlaneCorners::BOTTOM_LEFT] - corners[PlaneCorners::BOTTOM_RIGHT]).cross((corners[PlaneCorners::BOTTOM_LEFT] - corners[PlaneCorners::TOP_LEFT])).normalized();

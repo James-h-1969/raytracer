@@ -98,7 +98,8 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
         hit,
         world_hit,
         world_normal,
-        t_hit_local
+        t_hit_local,
+        this
     );
 
     return true;
@@ -137,20 +138,28 @@ bool Sphere::check_intersect(Ray& ray, Hit* hit) {
 
     // Step 4: Compute intersection point in local space
     Eigen::Vector3f local_hit = local_origin + t0 * local_dir;
-    Eigen::Vector3f world_hit = (euler_to_matrix(_rotation) * (local_hit.cwiseProduct(_scale))) + _location;
-    Eigen::Vector3f normal = (world_hit - _location).normalized();
+
+    // Local normal for a sphere
+    Eigen::Vector3f local_normal = local_hit.normalized();
+
+    // Transform hit back to world space
+    Eigen::Matrix3f R = euler_to_matrix(_rotation);
+    Eigen::Vector3f world_hit = R * (local_hit.cwiseProduct(_scale)) + _location;
+
+    // Correct world normal (inverse-transpose method)
+    Eigen::Vector3f world_normal =
+        (R * (local_normal.cwiseProduct(inv_scale))).normalized();
 
     update_hit_from_intersection(
         hit,
         world_hit,
-        normal,
-        t0
+        world_normal,
+        t0,
+        this
     );
 
     return true;
 }
-
-
 
 bool Plane::check_intersect(Ray& ray, Hit* hit) {
     float denom = ray.direction.dot(_normal);
@@ -182,7 +191,8 @@ bool Plane::check_intersect(Ray& ray, Hit* hit) {
             hit,
             ip,
             _normal,
-            t
+            t,
+            this
         );
         return true;
     }

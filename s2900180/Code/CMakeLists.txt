@@ -22,6 +22,7 @@ set(SOURCES
     src/BlenderFileReader.cpp
     src/AccelerationHierarchy.cpp
     src/Light.cpp
+    src/Raytracer.cpp
 )
 
 # --- Core library (shared by main and tests) ---

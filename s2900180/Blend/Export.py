@@ -11,7 +11,7 @@ import mathutils
 import math
 
 ### PARAMETERS: Only change here 
-OUTPUT_FILE_PATH = "/home/jhocking542/computer-graphics/raytracer/s2900180/ASCII/sphere_skew.json"
+OUTPUT_FILE_PATH = "/home/jhocking542/uni/computer-graphics/raytracer/s2900180/ASCII/test1.json"
 ################################
 
 def vector_to_list(v):
@@ -36,6 +36,79 @@ def get_mesh_type(obj):
     elif verts > 12:
         return "SPHERE"
     return "OTHER"
+
+def extract_phong_from_material(mat):
+    if not mat.use_nodes:
+        return None
+
+    kd = [1.0, 1.0, 1.0]
+    ks = [0.0, 0.0, 0.0]
+    shininess = 70.0
+    ka = 0.2
+    base_color = [0.0, 0.0, 0.0]
+
+    nodes = mat.node_tree.nodes
+    
+    first_node = 0
+    second_node = 0
+
+    diffuse_node = None
+    glossy_node = None
+    mix_node = None
+
+    for n in nodes:
+        if n.type == 'BSDF_DIFFUSE':
+            diffuse_node = n
+            if not first_node:
+                first_node = n
+            else:
+                second_node = n
+        elif n.type == 'BSDF_GLOSSY':
+            if not first_node:
+                first_node = n
+            else:
+                second_node = n
+            glossy_node = n
+        elif n.type == 'MIX_SHADER':
+            mix_node = n
+
+    # Extract diffuse
+    if diffuse_node:
+        color = diffuse_node.inputs["Color"].default_value
+        base_color = [int(color[0]*255), int(color[1]*255), int(color[2]*255)]
+        kd = base_color[:]  # base color is diffuse
+
+    # Extract glossy (specular)
+    if glossy_node:
+        color = glossy_node.inputs["Color"].default_value
+        rough = glossy_node.inputs["Roughness"].default_value
+
+        ks = [float(color[0]), float(color[1]), float(color[2])]
+        shininess = (1.0 - rough) * 256.0
+
+    # Mix diffuse/specular
+    fac = 0.0
+    if mix_node:
+        print("DOIN")
+        fac = mix_node.inputs["Fac"].default_value
+        kd = [c * (1.0 - fac)/255.0 for c in kd]
+        ks = [c * fac for c in ks]
+        
+        # mix the colours
+        color1 = first_node.inputs["Color"].default_value 
+        color2 = second_node.inputs["Color"].default_value 
+        
+        base_color = [int(color1[0]*255*(1-fac)+color2[0]*255*fac), int(color1[1]*255*(1-fac)+color2[1]*255*fac), int(color1[2]*255*(1-fac)+color2[2]*255*fac)]    
+
+    return {
+        "ka": ka,
+        "kd": kd,
+        "ks": ks,
+        "base_color": base_color,   # NEW
+        "shininess": shininess,
+        "reflectivity":fac
+    }
+
 
 def get_mesh_data(obj):
     """Extract geometric info depending on mesh type."""
@@ -112,13 +185,16 @@ def get_blend_object_as_dict():
         elif obj.type == "LIGHT" and obj.data.type == "POINT":
             entry.update({
                 "location": vector_to_list(obj.matrix_world.to_translation()),
-                "radiant_intensity": float(obj.data.energy)
+                "radiant_intensity": float(obj.data.energy) / (4.0 * math.pi)
             })
 
         elif obj.type == "MESH":
             mesh_data = get_mesh_data(obj)
             if mesh_data:
                 entry.update(mesh_data)
+                material_data = extract_phong_from_material(obj.active_material)
+                if material_data:
+                    entry["material"] = material_data
             else:
                 # skip unrecognized mesh types
                 continue

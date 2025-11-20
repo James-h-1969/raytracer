@@ -9,6 +9,8 @@
 #include <limits> 
 
 class Mesh; // Forward declaration
+struct Hit;
+struct Ray;
 
 constexpr int MAX_DEPTH = 10;
 
