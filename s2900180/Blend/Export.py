@@ -37,6 +37,19 @@ def get_mesh_type(obj):
         return "SPHERE"
     return "OTHER"
 
+def extract_texture_path_from_material(mat):
+    if not mat or not mat.use_nodes:
+        return None
+
+    for node in mat.node_tree.nodes:
+        if node.type == 'TEX_IMAGE' and node.image:
+            return {
+                "absolute_path": bpy.path.abspath(node.image.filepath),
+            }
+    
+    return None
+
+
 def extract_phong_from_material(mat):
     if not mat.use_nodes:
         return None
@@ -100,14 +113,21 @@ def extract_phong_from_material(mat):
         
         base_color = [int(color1[0]*255*(1-fac)+color2[0]*255*fac), int(color1[1]*255*(1-fac)+color2[1]*255*fac), int(color1[2]*255*(1-fac)+color2[2]*255*fac)]    
 
-    return {
+    result = {
         "ka": ka,
         "kd": kd,
         "ks": ks,
-        "base_color": base_color,   # NEW
+        "base_color": base_color,
         "shininess": shininess,
-        "reflectivity":fac
+        "reflectivity": fac
     }
+
+    # Add texture info if exists
+    texture_info = extract_texture_path_from_material(mat)
+    if texture_info:
+        result["texture"] = texture_info
+
+    return result
 
 
 def get_mesh_data(obj):

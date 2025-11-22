@@ -26,7 +26,7 @@ void Plane::show_properties() {
 }
 
 bool Cube::check_intersect(Ray& ray, Hit* hit) {
-    // Transform ray into local object space
+    // transform ray into local object space
     Eigen::Matrix3f R = euler_to_matrix(_rotation);
     Eigen::Matrix3f R_inv = R.transpose();
     Eigen::Vector3f local_origin = R_inv * (ray.origin - _translation);
@@ -76,7 +76,6 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
     else if (std::fabs(local_hit.z() - box_max.z()) < EPS) local_normal = Eigen::Vector3f(0, 0,  1);
     else if (std::fabs(local_hit.z() - box_min.z()) < EPS) local_normal = Eigen::Vector3f(0, 0, -1);
     else {
-        // Fallback: find largest component of (local_hit) — avoids degenerate misses
         Eigen::Vector3f abs_hit = local_hit.cwiseAbs();
         if (abs_hit.x() > abs_hit.y() && abs_hit.x() > abs_hit.z())
             local_normal = Eigen::Vector3f((local_hit.x() > 0) ? 1.0f : -1.0f, 0, 0);
@@ -86,20 +85,64 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
             local_normal = Eigen::Vector3f(0, 0, (local_hit.z() > 0) ? 1.0f : -1.0f);
     }
 
+     // Compute UV coordinates on the cube face
+    float u = 0.0f, v = 0.0f;
+
+    // Local ranges
+    float xmin = box_min.x(), xmax = box_max.x();
+    float ymin = box_min.y(), ymax = box_max.y();
+    float zmin = box_min.z(), zmax = box_max.z();
+
+    float dx = xmax - xmin;
+    float dy = ymax - ymin;
+    float dz = zmax - zmin;
+
+    Eigen::Vector3f p = local_hit;
+
+    if (local_normal.x() ==  1) {           // +X face
+        u = (zmax - p.z()) / dz;
+        v = (p.y() - ymin) / dy;
+    }
+    else if (local_normal.x() == -1) {      // -X face
+        u = (p.z() - zmin) / dz;
+        v = (p.y() - ymin) / dy;
+    }
+    else if (local_normal.y() ==  1) {      // +Y face
+        u = (p.x() - xmin) / dx;
+        v = (p.z() - zmin) / dz;
+    }
+    else if (local_normal.y() == -1) {      // -Y face
+        u = (p.x() - xmin) / dx;
+        v = (zmax - p.z()) / dz;
+    }
+    else if (local_normal.z() ==  1) {      // +Z face
+        u = (p.x() - xmin) / dx;
+        v = (ymax - p.y()) / dy;
+    }
+    else if (local_normal.z() == -1) {      // -Z face
+        u = (p.x() - xmin) / dx;
+        v = (ymax - p.y()) / dy;
+    }
+
+    // Slight clamp for precision issues
+    u = std::clamp(u, 0.0f, 1.0f);
+    v = std::clamp(v, 0.0f, 1.0f);
+
     // Transform normal to world space (rotation only)
     Eigen::Vector3f world_normal = (R * local_normal).normalized();
 
     // Convert hit point to world space
     Eigen::Vector3f world_hit = R * local_hit + _translation;
 
-    // IMPORTANT: t_hit_local is in the same parametric units as ray.direction if rotation is orthonormal.
     // If your transform includes non-uniform scale, you must transform ray by scale too or compute world t separately.
     update_hit_from_intersection(
         hit,
         world_hit,
         world_normal,
         t_hit_local,
-        this
+        this,
+        u, 
+        v
     );
 
     return true;

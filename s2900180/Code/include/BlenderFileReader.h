@@ -7,6 +7,8 @@ James Hocking, 2025
 
 #include "Camera.h"
 #include "Light.h"
+#include "Image.h"
+#include "Helpers.h"
 #include "Mesh.h"
 #include <iostream>
 #include <fstream>
@@ -22,9 +24,7 @@ class BlenderFileReader {
   the file.
   */
   public: 
-    BlenderFileReader(std::string filepath) : _filepath(filepath) {
-      std::cout << "Created a blender file reader for " << _filepath << "\n\n";
-    };
+    BlenderFileReader(std::string filepath) : _filepath(filepath) {;};
 
     // function that reads the JSON of the blender file and creates the Camera object
     Camera get_camera_from_blender_file();

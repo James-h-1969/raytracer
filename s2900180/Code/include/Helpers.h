@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <Eigen/Dense>
+#include <nlohmann/json.hpp>
 
 inline Eigen::Matrix3f euler_to_matrix(Eigen::Vector3f euler) {
     /*
@@ -32,9 +33,6 @@ inline Eigen::Matrix3f euler_to_matrix(Eigen::Vector3f euler) {
     return Rx * Ry * Rz;
 }
 
-struct Colour {
-    int r = 0;
-    int g = 0;
-    int b = 0;
-};
-
+inline Eigen::Vector3f vec3_from_json(const nlohmann::json& j) {
+      return Eigen::Vector3f(j[0], j[1], j[2]);
+}

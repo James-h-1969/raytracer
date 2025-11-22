@@ -4,13 +4,7 @@ into an image.
 
 ## Running the code (Build instructions)
 ```bash
-mkdir build && cd build
-
-cmake ..
-
-make
-
-./raytracer
+./build_run_convert <filename>
 ```
 
 ## Running unit tests
@@ -31,3 +25,15 @@ When the final code outputs a `.ppm` file, you can convert it into a png using
 ```bash
 convert output.ppm output.png
 ```
+
+## TODO:
+    - Handle refraction 
+    - Texture and texture mapping 
+        - Make it so values of ka, ks, kd are better
+        - Check the normals of cubes
+        - Rotations of cubes
+    - Further tooling from command line 
+        - depth of recursion (default 3)
+        - amount of samples for anti aliasing (default 1)
+    - Distributed ray tracing 
+    - Lens effects 

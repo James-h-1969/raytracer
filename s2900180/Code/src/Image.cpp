@@ -38,6 +38,8 @@ void PPMImageFile::read_image_from_file() {
         }
         _image_map.push_back(row);
     }
+
+    _has_image = true;
 }
 
 void PPMImageFile::update_pixel(int px, int py, struct Colour new_colour) {
@@ -62,34 +64,4 @@ void PPMImageFile::write_current_image_to_file(std::string export_filename) {
     }
 
     out.close();    
-}
-
-void generate_ray_text_file(Camera camera, std::string output_file_name, int amount_of_rays) {
-    const auto& props = camera.get_camera_properties();
-    std::vector<Ray> rays;
-
-    int step_x = std::max(1, static_cast<int>(props.resolution_x / amount_of_rays));
-    int step_y = std::max(1, static_cast<int>(props.resolution_y / amount_of_rays));
-
-    for (int px = 0; px <= props.resolution_x; px += step_x) {
-        for (int py = 0; py <= props.resolution_y; py += step_y) {
-            Pixel p(px, py);
-            Ray r = p.as_ray(props);
-            rays.push_back(r);
-        }
-    }
-
-    // write to file
-    std::ofstream out(output_file_name);
-    if (!out.is_open()) {
-        std::cerr << "Failed to open rays.txt for writing.\n";
-        return;
-    }
-
-    for (const auto& ray : rays) {
-        out << ray.origin.x() << " " << ray.origin.y() << " " << ray.origin.z() << " "
-            << ray.direction.x() << " " << ray.direction.y() << " " << ray.direction.z() << "\n";
-    }
-
-    out.close();
 }

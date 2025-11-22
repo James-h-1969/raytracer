@@ -5,18 +5,12 @@ James Hocking, 2025
 
 #pragma once 
 
-#include "Light.h"
+#include "Types.h"
 #include "Camera.h"
 #include <string>
 #include <fstream>
 #include <random>
 #include <vector>
-
-/*
-Function that iterates through pixels, converts them to rays, then writes them to an output 
-file. It creates a grid amount_of_rays * amount_of_rays spread across each dimension.
-*/
-void generate_ray_text_file(Camera camera, std::string output_file_name, int amount_of_rays);
 
 struct Pixel {
     /*
@@ -67,9 +61,10 @@ struct Pixel {
     };
 };
 
+
 class PPMImageFile {
     public:
-        PPMImageFile(std::string filename): _filename(filename), _width(0), _height(0) {};
+        PPMImageFile(std::string filename): _filename(filename), _width(0), _height(0), _has_image(false) {};
 
         Pixel get_pixel(int px, int py) {return _image_map.at(py).at(px); };
 
@@ -102,10 +97,12 @@ class PPMImageFile {
         // getters 
         int get_width() {return _width;};
         int get_height() {return _height;};
+        bool get_has_image() {return _has_image;};
 
     private:
         int _width;
         int _height;
+        bool _has_image;
         std::string _filename;
         std::vector<std::vector<Pixel>> _image_map;
 };

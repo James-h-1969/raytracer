@@ -15,21 +15,13 @@ James Hocking, 2025
 class Mesh;
 class BoundingBoxHierarchyTree;
 
-struct Ray {
-    Eigen::Vector3f origin;
-    Eigen::Vector3f direction;
-
-    void print() {
-        std::cout << "Origin:\n" << origin << std::endl;
-        std::cout << "Direction:\n" << direction << std::endl;
-    };
-};
-
 struct Hit {
     Eigen::Vector3f intersection_point;
     Eigen::Vector3f normal;
     float distance_along_ray;
     bool is_hit = false;
+
+    float u, v; // texture coordinates
 
     Mesh* mesh;
 };
@@ -49,5 +41,5 @@ class Light {
         float _radiant_intensity;
 };
 
-void update_hit_from_intersection(Hit* h, Eigen::Vector3f intersection_point, Eigen::Vector3f normal, float distance_along_ray, Mesh* mesh);
-Eigen::Vector3f shade(Hit* hit, std::vector<Light> lights, CameraProperties* props, float Ia, std::unique_ptr<BoundingBoxHierarchyTree>& bbht, int depth);
+void update_hit_from_intersection(Hit* h, Eigen::Vector3f intersection_point, Eigen::Vector3f normal, float distance_along_ray, Mesh* mesh, float u = -1.0f, float v = -1.0f);
+Eigen::Vector3f shade(Hit* hit, std::vector<Light> lights, CameraProperties* props, float Ia, std::unique_ptr<BoundingBoxHierarchyTree>& bbht, int depth=0);
