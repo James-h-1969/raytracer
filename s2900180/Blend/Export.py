@@ -43,92 +43,135 @@ def extract_texture_path_from_material(mat):
 
     for node in mat.node_tree.nodes:
         if node.type == 'TEX_IMAGE' and node.image:
+            path = bpy.path.abspath(node.image.filepath)
+            path = path[:-4]
+            path += ".ppm"
             return {
-                "absolute_path": bpy.path.abspath(node.image.filepath),
+                "absolute_path": path,
             }
     
     return None
 
-
 def extract_phong_from_material(mat):
-    if not mat.use_nodes:
+    """
+    Extracts Phong parameters and handles Texture * Color multiplication logic.
+    """
+    
+    if not mat or not mat.use_nodes:
         return None
 
-    kd = [1.0, 1.0, 1.0]
-    ks = [0.0, 0.0, 0.0]
-    shininess = 70.0
-    ka = 0.2
-    base_color = [0.0, 0.0, 0.0]
-
-    nodes = mat.node_tree.nodes
-    
-    first_node = 0
-    second_node = 0
-
-    diffuse_node = None
-    glossy_node = None
-    mix_node = None
-
-    for n in nodes:
-        if n.type == 'BSDF_DIFFUSE':
-            diffuse_node = n
-            if not first_node:
-                first_node = n
-            else:
-                second_node = n
-        elif n.type == 'BSDF_GLOSSY':
-            if not first_node:
-                first_node = n
-            else:
-                second_node = n
-            glossy_node = n
-        elif n.type == 'MIX_SHADER':
-            mix_node = n
-
-    # Extract diffuse
-    if diffuse_node:
-        color = diffuse_node.inputs["Color"].default_value
-        base_color = [int(color[0]*255), int(color[1]*255), int(color[2]*255)]
-        kd = base_color[:]  # base color is diffuse
-
-    # Extract glossy (specular)
-    if glossy_node:
-        color = glossy_node.inputs["Color"].default_value
-        rough = glossy_node.inputs["Roughness"].default_value
-
-        ks = [float(color[0]), float(color[1]), float(color[2])]
-        shininess = (1.0 - rough) * 256.0
-
-    # Mix diffuse/specular
-    fac = 0.0
-    if mix_node:
-        print("DOIN")
-        fac = mix_node.inputs["Fac"].default_value
-        kd = [c * (1.0 - fac)/255.0 for c in kd]
-        ks = [c * fac for c in ks]
-        
-        # mix the colours
-        color1 = first_node.inputs["Color"].default_value 
-        color2 = second_node.inputs["Color"].default_value 
-        
-        base_color = [int(color1[0]*255*(1-fac)+color2[0]*255*fac), int(color1[1]*255*(1-fac)+color2[1]*255*fac), int(color1[2]*255*(1-fac)+color2[2]*255*fac)]    
-
-    result = {
-        "ka": ka,
-        "kd": kd,
-        "ks": ks,
-        "base_color": base_color,
-        "shininess": shininess,
-        "reflectivity": fac
+    # --- Defaults ---
+    output_data = {
+        "ka": 0.1,
+        "kd": 0.5,
+        "ks": 0.5,
+        "shininess": 0.0,
+        "reflectivity": 0.3,
+        "transparancy": 0.0,
+        "ior": 1.0,
+        "base_colour": [0, 0, 0], # Default black
+        # Texture is optional, added only if found
     }
 
-    # Add texture info if exists
-    texture_info = extract_texture_path_from_material(mat)
-    if texture_info:
-        result["texture"] = texture_info
+    # --- Helper: Analyze a specific color socket ---
+    # Returns a tuple: (found_color_vector, found_texture_path)
+    def analyze_color_socket(socket, default_val):
+        # 1. If no link, just return the color picker value
+        if not socket.is_linked:
+            return (default_val, None)
+        
+        # 2. Trace the link
+        node = socket.links[0].from_node
+        
+        # CASE A: Direct Texture Link
+        # If linked directly to an image, the "Tint" is White (1.0)
+        if node.type == 'TEX_IMAGE' and node.image:
+            path = bpy.path.abspath(node.image.filepath)
+            path = path[:-4] + ".ppm" # Enforce .ppm extension
+            return ([1.0, 1.0, 1.0, 1.0], {"absolute_path": path})
 
-    return result
+        # CASE B: MixRGB (Multiply) -> Texture * Tint
+        elif node.type == 'MIX_RGB' and node.blend_type == 'MULTIPLY':
+            # We need to find which input is color and which is texture
+            col_input = node.inputs[1] # "Color1"
+            tex_input = node.inputs[2] # "Color2"
+            
+            found_color = [1.0, 1.0, 1.0, 1.0]
+            found_path = None
 
+            # Check Input 1
+            if not col_input.is_linked:
+                found_color = col_input.default_value
+            elif col_input.links[0].from_node.type == 'TEX_IMAGE':
+                img_node = col_input.links[0].from_node
+                if img_node.image:
+                    p = bpy.path.abspath(img_node.image.filepath)
+                    found_path = {"absolute_path": p[:-4] + ".ppm"}
+
+            # Check Input 2
+            if not tex_input.is_linked:
+                # If we didn't find color in input 1, this might be it
+                # But usually Multiply is (Texture * Color) or (Color * Texture)
+                # We multiply them, so order technically doesn't matter for the float value
+                c = tex_input.default_value
+                found_color = [found_color[0]*c[0], found_color[1]*c[1], found_color[2]*c[2], 1.0]
+            elif tex_input.links[0].from_node.type == 'TEX_IMAGE':
+                img_node = tex_input.links[0].from_node
+                if img_node.image:
+                    p = bpy.path.abspath(img_node.image.filepath)
+                    found_path = {"absolute_path": p[:-4] + ".ppm"}
+
+            return (found_color, found_path)
+
+        # Fallback: Unknown node type linked
+        return (default_val, None)
+
+    # --- 1. Find the Main Shader Node ---
+    # We prioritize Principled or Diffuse/Glossy
+    target_node = None
+    for node in mat.node_tree.nodes:
+        if node.type in ['BSDF_PRINCIPLED', 'BSDF_DIFFUSE', 'BSDF_GLOSSY']:
+            target_node = node
+            break
+            
+    # Note: Your original script handled MIX_SHADER. 
+    # For simplicity, we are grabbing the first valid BSDF found.
+    # If you need Mix Shader logic, it gets much more complex with textures on both sides.
+
+    if target_node:
+        # Determine which socket is the color
+        color_socket = None
+        if "Base Color" in target_node.inputs:
+            color_socket = target_node.inputs["Base Color"]
+        elif "Color" in target_node.inputs:
+            color_socket = target_node.inputs["Color"]
+            
+        if color_socket:
+            col_val, tex_data = analyze_color_socket(color_socket, color_socket.default_value)
+            
+            # Convert color to 0-255 int
+            output_data["base_colour"] = [
+                int(col_val[0] * 255), 
+                int(col_val[1] * 255), 
+                int(col_val[2] * 255)
+            ]
+            
+            # If we found a texture, add it
+            if tex_data:
+                output_data["texture"] = tex_data
+
+        # --- Extract other Physics (Roughness/IOR) ---
+        if "Roughness" in target_node.inputs:
+            roughness = target_node.inputs["Roughness"].default_value
+            output_data["shininess"] = (1.0 - roughness ** 4) * 2048
+            
+        if "IOR" in target_node.inputs:
+            output_data["ior"] = target_node.inputs["IOR"].default_value
+            
+        if "Transmission" in target_node.inputs:
+             output_data["transparancy"] = target_node.inputs["Transmission"].default_value
+
+    return output_data
 
 def get_mesh_data(obj):
     """Extract geometric info depending on mesh type."""
@@ -138,12 +181,6 @@ def get_mesh_data(obj):
         loc = obj.matrix_world.to_translation()
         rot = obj.rotation_euler  # same as GUI values (in radians)
         scale = obj.scale
-
-        # Compute radius using world-space vertices
-        verts_world = [obj.matrix_world @ v.co for v in obj.data.vertices]
-        origin = obj.matrix_world.to_translation()
-        radius = max((v - origin).length for v in verts_world)
-
         return {
             "shape": "SPHERE",
             "location": vector_to_list(loc),
@@ -154,7 +191,6 @@ def get_mesh_data(obj):
         loc = obj.matrix_world.to_translation()
         rot = obj.rotation_euler  # same rotation as shown in GUI (in radians)
         scale = obj.scale         # 3D scale vector
-
         return {
             "shape": "CUBE",
             "translation": vector_to_list(loc),
@@ -201,13 +237,17 @@ def get_blend_object_as_dict():
                 ],
 
             })
-
         elif obj.type == "LIGHT" and obj.data.type == "POINT":
+            light = obj.data
+            intensity_factor = float(light.energy) / (4.0 * math.pi)
+            r, g, b = light.color
+            i_d = r * intensity_factor
+            i_s = r * intensity_factor
             entry.update({
                 "location": vector_to_list(obj.matrix_world.to_translation()),
-                "radiant_intensity": float(obj.data.energy) / (4.0 * math.pi)
+                "id": i_d,
+                "is": i_s
             })
-
         elif obj.type == "MESH":
             mesh_data = get_mesh_data(obj)
             if mesh_data:

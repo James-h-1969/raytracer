@@ -26,142 +26,114 @@ void Plane::show_properties() {
 }
 
 bool Cube::check_intersect(Ray& ray, Hit* hit) {
-    // transform ray into local object space
-    Eigen::Matrix3f R = euler_to_matrix(_rotation);
-    Eigen::Matrix3f R_inv = R.transpose();
+    // rotate to local space
+    Eigen::Matrix3f R_inv = euler_to_matrix(_rotation).transpose();
     Eigen::Vector3f local_origin = R_inv * (ray.origin - _translation);
-    Eigen::Vector3f local_dir = R_inv * ray.direction;
+    Eigen::Vector3f local_direction = R_inv * ray.direction;
 
-    // Half extents per axis (non-uniform scale / half-size)
-    Eigen::Vector3f half_size = _scale; // assume this is half extents
-    Eigen::Vector3f box_min = -half_size;
-    Eigen::Vector3f box_max =  half_size;
+    // scale into unit
+    Eigen::Vector3f inv_scale = _scale.cwiseInverse();
+    local_origin = local_origin.cwiseProduct(inv_scale);
+    local_direction = local_direction.cwiseProduct(inv_scale);
 
-    // Slab test
-    float tmin = -std::numeric_limits<float>::infinity();
-    float tmax =  std::numeric_limits<float>::infinity();
+    const Eigen::Vector3f box_min(-0.5f, -0.5f, -0.5f);
+    const Eigen::Vector3f box_max( 0.5f,  0.5f,  0.5f);
+
+    float t_min_curr = -std::numeric_limits<float>::infinity();
+    float t_max_curr = std::numeric_limits<float>::infinity();
+    
+    Eigen::Vector3f t_min_normal = Eigen::Vector3f::Zero(); 
+    Eigen::Vector3f t_max_normal = Eigen::Vector3f::Zero();
 
     for (int i = 0; i < 3; ++i) {
-        if (fabs(local_dir[i]) < 1e-6f) {
-            // Ray is parallel to slab
-            if (local_origin[i] < box_min[i] || local_origin[i] > box_max[i])
+        if (std::abs(local_direction[i]) < 1e-6f) {
+            if (local_origin[i] < box_min[i] || local_origin[i] > box_max[i]) {
                 return false;
+            }
         } else {
-            float t1 = (box_min[i] - local_origin[i]) / local_dir[i];
-            float t2 = (box_max[i] - local_origin[i]) / local_dir[i];
-            if (t1 > t2) std::swap(t1, t2);
+            float inv_d = 1.0f / local_direction[i];
+            float t0 = (box_min[i] - local_origin[i]) * inv_d;
+            float t1 = (box_max[i] - local_origin[i]) * inv_d;
+            
+            float sign = (inv_d < 0.0f) ? 1.0f : -1.0f;
+            Eigen::Vector3f current_normal = Eigen::Vector3f::Zero();
+            current_normal[i] = 1.0f; 
 
-            tmin = std::max(tmin, t1);
-            tmax = std::min(tmax, t2);
-            if (tmin > tmax) return false;
+            if (t0 > t1) {
+                std::swap(t0, t1);
+            }
+
+            if (t0 > t_min_curr) {
+                t_min_curr = t0;
+                t_min_normal = current_normal * sign;
+            }
+
+            if (t1 < t_max_curr) {
+                t_max_curr = t1;
+                t_max_normal = current_normal * -sign; 
+            }
+
+            if (t_max_curr <= t_min_curr) return false;
         }
     }
 
-    if (tmax < 0) return false; // Box is behind the ray
+    if (t_max_curr < 0) return false;
 
-    // choose t_hit: if tmin >= 0 -> first hit is at tmin, otherwise ray starts inside so use tmax
-    float t_hit_local = (tmin >= 0.0f) ? tmin : tmax;
+    float t_hit;
+    Eigen::Vector3f local_normal;
 
-    // Compute intersection point in local space
-    Eigen::Vector3f local_hit = local_origin + t_hit_local * local_dir;
-
-    // Determine which face we hit by checking which coordinate is (within eps) at min/max
-    const float EPS = 1e-4f; // tolerance — adjust relative to scale if needed
-    Eigen::Vector3f local_normal(0.0f, 0.0f, 0.0f);
-
-    if (std::fabs(local_hit.x() - box_max.x()) < EPS) local_normal = Eigen::Vector3f( 1, 0, 0);
-    else if (std::fabs(local_hit.x() - box_min.x()) < EPS) local_normal = Eigen::Vector3f(-1, 0, 0);
-    else if (std::fabs(local_hit.y() - box_max.y()) < EPS) local_normal = Eigen::Vector3f(0,  1, 0);
-    else if (std::fabs(local_hit.y() - box_min.y()) < EPS) local_normal = Eigen::Vector3f(0, -1, 0);
-    else if (std::fabs(local_hit.z() - box_max.z()) < EPS) local_normal = Eigen::Vector3f(0, 0,  1);
-    else if (std::fabs(local_hit.z() - box_min.z()) < EPS) local_normal = Eigen::Vector3f(0, 0, -1);
-    else {
-        Eigen::Vector3f abs_hit = local_hit.cwiseAbs();
-        if (abs_hit.x() > abs_hit.y() && abs_hit.x() > abs_hit.z())
-            local_normal = Eigen::Vector3f((local_hit.x() > 0) ? 1.0f : -1.0f, 0, 0);
-        else if (abs_hit.y() > abs_hit.z())
-            local_normal = Eigen::Vector3f(0, (local_hit.y() > 0) ? 1.0f : -1.0f, 0);
-        else
-            local_normal = Eigen::Vector3f(0, 0, (local_hit.z() > 0) ? 1.0f : -1.0f);
+    if (t_min_curr < 0) {
+        t_hit = t_max_curr;
+        local_normal = t_max_normal;
+    } else {
+        t_hit = t_min_curr;
+        local_normal = t_min_normal; 
     }
 
-     // Compute UV coordinates on the cube face
-    float u = 0.0f, v = 0.0f;
+    if (t_hit > 0) {
+        Eigen::Vector3f local_hit = local_origin + (local_direction * t_hit);
 
-    // Local ranges
-    float xmin = box_min.x(), xmax = box_max.x();
-    float ymin = box_min.y(), ymax = box_max.y();
-    float zmin = box_min.z(), zmax = box_max.z();
+        float u = 0.0f;
+        float v = 0.0f;
 
-    float dx = xmax - xmin;
-    float dy = ymax - ymin;
-    float dz = zmax - zmin;
+        if (std::abs(local_normal.x()) > 0.5f) {
+            u = local_hit.y() + 0.5f;
+            v = local_hit.z() + 0.5f;
+        } 
+        else if (std::abs(local_normal.y()) > 0.5f) {
+            u = 0.5f - local_hit.x();
+            v = 0.5f - local_hit.z();
+        } 
+        else {
+            u = local_hit.x() + 0.5f;
+            v = local_hit.y() + 0.5f;
+        }
 
-    Eigen::Vector3f p = local_hit;
-
-    if (local_normal.x() ==  1) {           // +X face
-        u = (zmax - p.z()) / dz;
-        v = (p.y() - ymin) / dy;
-    }
-    else if (local_normal.x() == -1) {      // -X face
-        u = (p.z() - zmin) / dz;
-        v = (p.y() - ymin) / dy;
-    }
-    else if (local_normal.y() ==  1) {      // +Y face
-        u = (p.x() - xmin) / dx;
-        v = (p.z() - zmin) / dz;
-    }
-    else if (local_normal.y() == -1) {      // -Y face
-        u = (p.x() - xmin) / dx;
-        v = (zmax - p.z()) / dz;
-    }
-    else if (local_normal.z() ==  1) {      // +Z face
-        u = (p.x() - xmin) / dx;
-        v = (ymax - p.y()) / dy;
-    }
-    else if (local_normal.z() == -1) {      // -Z face
-        u = (p.x() - xmin) / dx;
-        v = (ymax - p.y()) / dy;
+        Eigen::Matrix3f R = euler_to_matrix(_rotation);
+        Eigen::Vector3f world_hit = R * (local_hit.cwiseProduct(_scale)) + _translation;
+        Eigen::Vector3f world_normal = (R * local_normal.cwiseProduct(inv_scale)).normalized();
+        
+        update_hit_from_intersection(hit, world_hit, world_normal, t_hit, this, u, v);
+        
+        return true;
     }
 
-    // Slight clamp for precision issues
-    u = std::clamp(u, 0.0f, 1.0f);
-    v = std::clamp(v, 0.0f, 1.0f);
-
-    // Transform normal to world space (rotation only)
-    Eigen::Vector3f world_normal = (R * local_normal).normalized();
-
-    // Convert hit point to world space
-    Eigen::Vector3f world_hit = R * local_hit + _translation;
-
-    // If your transform includes non-uniform scale, you must transform ray by scale too or compute world t separately.
-    update_hit_from_intersection(
-        hit,
-        world_hit,
-        world_normal,
-        t_hit_local,
-        this,
-        u, 
-        v
-    );
-
-    return true;
+    return false;
 }
 
 
-
 bool Sphere::check_intersect(Ray& ray, Hit* hit) {
-    // Step 1: Transform ray into local object space
+    // rotate into local space
     Eigen::Matrix3f R_inv = euler_to_matrix(_rotation).transpose();
     Eigen::Vector3f local_origin = R_inv * (ray.origin - _location);
     Eigen::Vector3f local_dir = R_inv * ray.direction;
 
-    // Step 2: Apply inverse scale (turn ellipsoid into a unit sphere)
+    // turn ellipsoid into unit
     Eigen::Vector3f inv_scale = _scale.cwiseInverse();
     local_origin = local_origin.cwiseProduct(inv_scale);
     local_dir = local_dir.cwiseProduct(inv_scale);
 
-    // Step 3: Ray-sphere intersection in unit sphere space
+    // ray intersect 
     float a = local_dir.dot(local_dir);
     float b = 2.0f * local_origin.dot(local_dir);
     float c = local_origin.dot(local_origin) - 1.0f; // radius = 1 after scaling
@@ -179,26 +151,26 @@ bool Sphere::check_intersect(Ray& ray, Hit* hit) {
         if (t0 < 0) return false;
     }
 
-    // Step 4: Compute intersection point in local space
+    // compute intersection point in local space
     Eigen::Vector3f local_hit = local_origin + t0 * local_dir;
-
-    // Local normal for a sphere
     Eigen::Vector3f local_normal = local_hit.normalized();
 
-    // Transform hit back to world space
+    // transform hit back to world space
     Eigen::Matrix3f R = euler_to_matrix(_rotation);
     Eigen::Vector3f world_hit = R * (local_hit.cwiseProduct(_scale)) + _location;
+    Eigen::Vector3f world_normal = (R * (local_normal.cwiseProduct(inv_scale))).normalized();
 
-    // Correct world normal (inverse-transpose method)
-    Eigen::Vector3f world_normal =
-        (R * (local_normal.cwiseProduct(inv_scale))).normalized();
+    float u = 0.5f + (std::atan2(local_hit.z(), local_hit.x()) / (2.0f * M_PI));
+    float v = 0.5f - (std::asin(local_hit.y()) / M_PI);
 
     update_hit_from_intersection(
         hit,
         world_hit,
         world_normal,
         t0,
-        this
+        this,
+        u,
+        v
     );
 
     return true;
@@ -229,13 +201,23 @@ bool Plane::check_intersect(Ray& ray, Hit* hit) {
     bool y_check = same_sign(v1[1], v2[1]);
     bool z_check = same_sign(v1[2], v2[2]);
 
+    Eigen::Vector3f u_axis = _corners[2] - _corners[0];
+    Eigen::Vector3f v_axis = _corners[3] - _corners[0];
+
+    Eigen::Vector3f hit_vec = ip - _corners[0];
+
+    float u = hit_vec.dot(u_axis) / u_axis.squaredNorm();
+    float v = hit_vec.dot(v_axis) / v_axis.squaredNorm();
+
     if (x_check && y_check && z_check) {
         update_hit_from_intersection(
             hit,
             ip,
             _normal,
             t,
-            this
+            this,
+            u,
+            v
         );
         return true;
     }

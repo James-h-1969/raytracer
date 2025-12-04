@@ -7,6 +7,10 @@ void RayTracer::create_settings_from_command_args(int argc, char* argv[]) {
             _ray_tracer_settings.input_filename =  argv[i+1];
         } else if (!strcmp(current_setting, "--output")) {
             _ray_tracer_settings.output_filename = argv[i+1];
+        } else if (!strcmp(current_setting, "--antialiasing")) {
+            _ray_tracer_settings.amount_of_antialiasing_samples_per_pixel = atoi(argv[i+1]); 
+        } else if (!strcmp(current_setting, "--recursion-depth")) {
+            _ray_tracer_settings.max_depth_of_reflection_recursion = atoi(argv[i+1]);
         }
     }
 }
@@ -35,10 +39,10 @@ void RayTracer::render_image() {
 
     int intersection_test_counter = 0;
     for (int px = 0; px < image.get_width(); px++) {
-        for (int py = 0; py < image.get_height(); py++) {
+        for (int py = 0; py < image.get_height(); py++) {            
             Eigen::Vector3f overall_shade = Eigen::Vector3f::Zero();
             bool is_hit = false;
-            for (int sample_i = 0; sample_i < amount_of_antialiasing_samples_per_pixel; sample_i++) {
+            for (int sample_i = 0; sample_i < _ray_tracer_settings.amount_of_antialiasing_samples_per_pixel; sample_i++) {
                 float sample_offset_x = distribution(generator);
                 float sample_offset_y = distribution(generator);
 
@@ -50,7 +54,7 @@ void RayTracer::render_image() {
                 Hit h;
 
                 if (_bbht->check_intersect(r, &h, &intersection_test_counter)) {
-                    Eigen::Vector3f s = shade(&h, _lights, &_props, 1.0f, _bbht);
+                    Eigen::Vector3f s = shade(&h, _lights, &_props, 1.0f, _bbht, 0, _ray_tracer_settings.max_depth_of_reflection_recursion);
                     
                     // shade operates in 0-1 shading region, convert back to rgb255
                     overall_shade[0] += s[0] * 255.0f;
@@ -61,7 +65,7 @@ void RayTracer::render_image() {
                 }
             }
 
-            overall_shade /= amount_of_antialiasing_samples_per_pixel; // finding the average
+            overall_shade /= _ray_tracer_settings.amount_of_antialiasing_samples_per_pixel; // finding the average
             if (!is_hit) overall_shade += blender_background;
             Colour new_colour{overall_shade[0], overall_shade[1], overall_shade[2]};
             

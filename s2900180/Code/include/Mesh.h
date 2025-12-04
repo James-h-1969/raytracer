@@ -17,9 +17,11 @@ James Hocking, 2025
 #include <string>
 #include "Material.h"
 
+// constants
 constexpr int NUMBER_OF_PLANE_CORNERS = 4;
 constexpr int NUMBER_OF_AXIS = 3;
 
+// classes
 enum PlaneCorners {
   BOTTOM_LEFT,
   BOTTOM_RIGHT,
@@ -34,7 +36,11 @@ enum class MeshType {
 };
 
 class Mesh {
+  /*
+    The parent class for all meshes, holds the shared features of all meshes
+  */
   public:
+    // almost all functions are purely virtual as needed to be implemented
     Mesh(std::string name, MeshType type, Material material): _name(std::move(name)), _type(type), _material(material) {}
     virtual void show_properties() = 0;
     virtual enum MeshType get_meshtype() = 0;

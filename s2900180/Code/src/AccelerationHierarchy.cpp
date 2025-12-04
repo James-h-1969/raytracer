@@ -1,6 +1,8 @@
 #include "AccelerationHierarchy.h"
 
 void find_max_and_min(Eigen::Vector3f& max, Eigen::Vector3f& min, const std::vector<std::unique_ptr<Mesh>>& meshes) {
+    // function that finds the global max and min based on the meshes provided
+    
     Eigen::Vector3f global_min(std::numeric_limits<float>::max(),
                                std::numeric_limits<float>::max(),
                                std::numeric_limits<float>::max());
@@ -36,22 +38,27 @@ void BoundingBoxHierarchyTree::split_bounding_box(
 ) {
     if (meshes.empty()) return;
     
+    // if they reach leaf or max depth
     if (meshes.size() <= 2 || depth > MAX_DEPTH) {
         node->meshes = std::move(meshes);
         return;
     }
     
+    // find what axis to split on (find the longest)
     Eigen::Vector3f size = node->max - node->min;
     int axis;
-    if (size.x() >= size.y() && size.x() >= size.z()) axis = 0;
-    else if (size.y() >= size.z()) axis = 1;
-    else axis = 2;
-    
+    if (size.x() >= size.y() && size.x() >= size.z()) {
+        axis = 0;
+    } else if (size.y() >= size.z()) {
+        axis = 1;
+    } else {
+        axis = 2;
+    }
     float split_pos = node->min[axis] + size[axis] / 2.0f;
     
+    // based on the axis, find which should be left and right
     std::vector<std::unique_ptr<Mesh>> left_meshes;
     std::vector<std::unique_ptr<Mesh>> right_meshes;
-    
     for (auto& mesh : meshes) {
         float centroid = mesh->get_centroid()[axis];
         if (centroid < split_pos) {
@@ -60,10 +67,10 @@ void BoundingBoxHierarchyTree::split_bounding_box(
             right_meshes.push_back(std::move(mesh));
         }
     }
-    
     node->left = std::make_unique<BoundingBoxNode>();
     node->right = std::make_unique<BoundingBoxNode>();
 
+    // recurse into it
     find_max_and_min(node->left->max, node->left->min, left_meshes);
     find_max_and_min(node->right->max, node->right->min, right_meshes);   
     split_bounding_box(node->left, left_meshes, depth + 1);
@@ -71,8 +78,9 @@ void BoundingBoxHierarchyTree::split_bounding_box(
 }
 
 bool BoundingBoxNode::check_intersect(Ray ray, Hit* hit, int* counter) {
-    (*counter)++; 
+    (*counter)++; // purely for testing
 
+    // do slab test
     float tmin = -std::numeric_limits<float>::infinity();
     float tmax =  std::numeric_limits<float>::infinity();
 
@@ -92,11 +100,10 @@ bool BoundingBoxNode::check_intersect(Ray ray, Hit* hit, int* counter) {
 
     if (tmax < 0) return false; 
 
-    // --- Leaf node: check contained meshes ---
+    // left node, check intersect with actual meshes
     if (!left && !right) {
         bool hit_any = false;
         for (auto& mesh_ptr : meshes) {
-            // mesh_ptr->show_properties();
             (*counter)++; 
             Mesh* mesh = mesh_ptr.get();   // get raw pointer
             if (mesh->check_intersect(ray, hit)) {
@@ -106,7 +113,7 @@ bool BoundingBoxNode::check_intersect(Ray ray, Hit* hit, int* counter) {
         return hit_any;
     }
 
-    // --- Internal node: recurse ---
+    // interanl node, recurse
     bool hit_left = left && left->check_intersect(ray, hit, counter);
     bool hit_right = right && right->check_intersect(ray, hit, counter);
 

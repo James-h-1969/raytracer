@@ -5,18 +5,18 @@ set -e
 
 # Ensure the user gave an argument
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <scene_name (without .json)>"
-    exit 1
+  echo "Usage: $0 <scene_name (without .json)>"
+  exit 1
 fi
 
 scene="$1"
 
 # ----- Build -----
-cd build 
+cd build
 make
 
 # ----- Run ray tracer -----
-./raytracer --input ../../ASCII/${scene}.json --output ../../Output/${scene}.ppm
+./raytracer --input ../../ASCII/${scene}.json --output ../../Output/${scene}.ppm --antialiasing 5 --recursion-depth 3
 
 # ----- Convert to PNG -----
 cd ..

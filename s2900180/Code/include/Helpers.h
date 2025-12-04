@@ -1,38 +1,30 @@
-#pragma once 
+#pragma once
 
 #include <Eigen/Dense>
 #include <nlohmann/json.hpp>
 
 inline Eigen::Matrix3f euler_to_matrix(Eigen::Vector3f euler) {
-    /*
-    Function that turns Euler angles into a rotation matrix
-    */
-    
-    float cx = cos(euler.x());
-    float sx = sin(euler.x());
-    float cy = cos(euler.y());
-    float sy = sin(euler.y());
-    float cz = cos(euler.z());
-    float sz = sin(euler.z());
+  /*
+  Function that turns euler angle rotation into a 3x3 rotation matrix.
+  */
+  using Eigen::AngleAxisf;
+  using Eigen::Vector3f;
+  using Eigen::Matrix3f;
 
-    Eigen::Matrix3f Rx;
-    Rx << 1, 0, 0,
-          0, cx, -sx,
-          0, sx, cx;
+  // Create angle-axis rotations for each local axis rotation
+  AngleAxisf rotX(euler.x(), Vector3f::UnitX());
+  AngleAxisf rotY(euler.y(), Vector3f::UnitY());
+  AngleAxisf rotZ(euler.z(), Vector3f::UnitZ());
 
-    Eigen::Matrix3f Ry;
-    Ry << cy, 0, sy,
-          0, 1, 0,
-          -sy, 0, cy;
 
-    Eigen::Matrix3f Rz;
-    Rz << cz, -sz, 0,
-          sz, cz, 0,
-          0, 0, 1;
-
-    return Rx * Ry * Rz;
+  Matrix3f R = (rotZ * rotY * rotX).toRotationMatrix();
+  return R;
 }
 
-inline Eigen::Vector3f vec3_from_json(const nlohmann::json& j) {
-      return Eigen::Vector3f(j[0], j[1], j[2]);
+inline Eigen::Vector3f vec3_from_json(const nlohmann::json &j) {
+  /*
+  Function that turns a json object that is assumed to come in as a list with three parts 
+  and turns it into a Eigen::Vector3f 
+  */
+  return Eigen::Vector3f(j[0], j[1], j[2]);
 }

@@ -7,10 +7,12 @@ class PPMImageFIle;
 
 struct Material { 
   float ka; // constant for ambiance
-  Eigen::Vector3f kd; // constant for diffuse
-  Eigen::Vector3f ks; // constant for specular
+  float kd; // constant for diffuse
+  float ks; // constant for specular
   float shininess;
   float reflectivity;
+  float transparancy = 0.0;
+  float ior = 1.0; // index of refraction
   Colour base_colour;
   PPMImageFile* texture = nullptr;
 };

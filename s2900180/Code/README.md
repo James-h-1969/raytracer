@@ -3,13 +3,18 @@ The code in this folder is directly responsible for turning the output json file
 into an image. 
 
 ## Running the code (Build instructions)
+In order to run everything, including converting the file into a PNG, you can run
 ```bash
 ./build_run_convert <filename>
 ```
+Where filename is everything _before_ the .json extension (eg. test1.json -> test1). In 
+order to adjust the settings for this, change line 18 of build_run_convert.sh.
 
 ## Running unit tests
-While in the `build` folder and _after_ building the project, do the following 
+While in the `build` folder, do the following 
 ```bash
+cmake ..
+make
 ./test/unit/run_tests
 ```
 
@@ -28,12 +33,5 @@ convert output.ppm output.png
 
 ## TODO:
     - Handle refraction 
-    - Texture and texture mapping 
-        - Make it so values of ka, ks, kd are better
-        - Check the normals of cubes
-        - Rotations of cubes
-    - Further tooling from command line 
-        - depth of recursion (default 3)
-        - amount of samples for anti aliasing (default 1)
     - Distributed ray tracing 
     - Lens effects 

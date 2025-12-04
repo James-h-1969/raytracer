@@ -48,10 +48,10 @@ Camera BlenderFileReader::get_camera_from_blender_file() {
 Material get_material_from_blender_object(const nlohmann::json& material_json) {
     Material material;
     material.ka = material_json["ka"];
-    material.kd = vec3_from_json(material_json["kd"]);
-    material.ks = vec3_from_json(material_json["ks"]);
+    material.kd = material_json["kd"];
+    material.ks = material_json["ks"];
     material.shininess = material_json["shininess"];
-    material.base_colour = {material_json["base_color"][0], material_json["base_color"][1], material_json["base_color"][2]};
+    material.base_colour = {material_json["base_colour"][0], material_json["base_colour"][1], material_json["base_colour"][2]};
     material.reflectivity = material_json["reflectivity"];
 
     if (material_json.contains("texture")) { // only include texture if given
@@ -86,7 +86,7 @@ std::vector<std::unique_ptr<Mesh>> BlenderFileReader::get_meshes_from_blender_fi
           Eigen::Vector3f rotation = vec3_from_json(object["rotation_euler_rad"]);
           Eigen::Vector3f scale = vec3_from_json(object["scale"]);
           Material material = get_material_from_blender_object(object["material"]);
-          meshes.push_back(std::make_unique<Cube>(translation, rotation, scale, name, MeshType::CUBE, material));
+          meshes.push_back(std::make_unique<Cube>(translation, rotation, 2*scale, name, MeshType::CUBE, material));
       } 
       else if (shape == "SPHERE") {
           Eigen::Vector3f location = vec3_from_json(object["location"]); // TODO. change naming convention
@@ -122,7 +122,9 @@ std::vector<Light> BlenderFileReader::get_lights_from_blender_file() {
   for (const auto& object : file_json["objects"]) {
     if (object["type"] == "LIGHT") {
         Eigen::Vector3f position = vec3_from_json(object["location"]); // TODO. change naming convention here
-        Light curr_l(position, object["radiant_intensity"]);
+        float id = object["id"];
+        float is = object["is"];
+        Light curr_l(position, id, is);
         l.push_back(curr_l);
     }
   }

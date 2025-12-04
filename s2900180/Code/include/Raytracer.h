@@ -7,25 +7,28 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include <algorithm>
+#include <stdlib.h>
 #include <random>
 #include "Light.h"
 #include "AccelerationHierarchy.h"
 
 const Eigen::Vector3f blender_background = {70.0f, 70.0f, 70.0f};
-const int amount_of_antialiasing_samples_per_pixel = 4; // make this a setting
+const int amount_of_antialiasing_samples_per_pixel = 1; // make this a setting
 
 struct RayTracerSettings 
 {
     std::string input_filename = std::string("No input filename detected. use --input flag");
-    std::string output_filename = std::string("No output filename detected. use --output flag");;
-
-    // TODO. more custom settings here
+    std::string output_filename = std::string("No output filename detected. use --output flag");
+    int amount_of_antialiasing_samples_per_pixel = 1;
+    int max_depth_of_reflection_recursion = 1;
 };
 
 class RayTracer 
 {
     public:
-        RayTracer() : _bbht(nullptr) {}
+        RayTracer() : _bbht(nullptr) {
+            std::cout << "[     James Hocking's RAYTRACER     ]" << std::endl;
+        };
 
         /*
         This is a function that turns the command line into a tool that can change the 

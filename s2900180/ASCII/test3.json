@@ -1,0 +1,80 @@
+{
+    "scene_name": "Scene",
+    "objects": [
+        {
+            "name": "Camera",
+            "type": "CAMERA",
+            "location": [
+                -0.21887612342834473,
+                -1.9492876529693604,
+                2.8152225017547607
+            ],
+            "gaze_vector_direction": [
+                1.5908148270682432e-05,
+                0.6658648252487183,
+                -0.7460724115371704
+            ],
+            "up_vector": [
+                6.659010978182778e-06,
+                0.7460723519325256,
+                0.6658648252487183
+            ],
+            "focal_length": 20.0,
+            "sensor_width": 36.0,
+            "sensor_height": 24.0,
+            "sensor_fit": "AUTO",
+            "film_resolution": [
+                1920,
+                1080
+            ]
+        },
+        {
+            "name": "CameraLight",
+            "type": "LIGHT",
+            "location": [
+                2.5,
+                -2.5,
+                2.0
+            ],
+            "id": 47.7464829275686,
+            "is": 47.7464829275686
+        },
+        {
+            "name": "Cube_06",
+            "type": "MESH",
+            "shape": "CUBE",
+            "translation": [
+                -0.3057246208190918,
+                3.834364652633667,
+                -2.467672109603882
+            ],
+            "rotation_euler_rad": [
+                0.0,
+                0.7853981852531433,
+                -0.33161255717277527
+            ],
+            "scale": [
+                1.0,
+                1.9500000476837158,
+                1.0
+            ],
+            "material": {
+                "ka": 0.1,
+                "kd": 0.5,
+                "ks": 0.5,
+                "shininess": 2048.0,
+                "reflectivity": 0.0,
+                "transparancy": 0.0,
+                "ior": 1.0,
+                "base_colour": [
+                    204,
+                    76,
+                    25
+                ],
+                "texture": {
+                    "absolute_path": "/home/jhocking542/Downloads/tex2.ppm"
+                }
+            }
+        }
+    ]
+}
