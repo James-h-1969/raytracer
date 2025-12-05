@@ -11,7 +11,7 @@ import mathutils
 import math
 
 ### PARAMETERS: Only change here 
-OUTPUT_FILE_PATH = "/home/jhocking542/uni/computer-graphics/raytracer/s2900180/ASCII/test1.json"
+OUTPUT_FILE_PATH = "/home/jhocking542/uni/computer-graphics/raytracer/s2900180/ASCII/test2.json"
 ################################
 
 def vector_to_list(v):
@@ -49,20 +49,21 @@ def extract_texture_path_from_material(mat):
             return {
                 "absolute_path": path,
             }
-    
+     
     return None
 
 def extract_phong_from_material(mat):
     """
     Extracts Phong parameters and handles Texture * Color multiplication logic.
+    Also handles MIX_SHADER by averaging the base colours.
     """
-    
+     
     if not mat or not mat.use_nodes:
         return None
 
     # --- Defaults ---
     output_data = {
-        "ka": 0.1,
+        "ka": 0.3,
         "kd": 0.5,
         "ks": 0.5,
         "shininess": 0.0,
@@ -79,10 +80,10 @@ def extract_phong_from_material(mat):
         # 1. If no link, just return the color picker value
         if not socket.is_linked:
             return (default_val, None)
-        
+         
         # 2. Trace the link
         node = socket.links[0].from_node
-        
+         
         # CASE A: Direct Texture Link
         # If linked directly to an image, the "Tint" is White (1.0)
         if node.type == 'TEX_IMAGE' and node.image:
@@ -95,7 +96,7 @@ def extract_phong_from_material(mat):
             # We need to find which input is color and which is texture
             col_input = node.inputs[1] # "Color1"
             tex_input = node.inputs[2] # "Color2"
-            
+             
             found_color = [1.0, 1.0, 1.0, 1.0]
             found_path = None
 
@@ -111,8 +112,6 @@ def extract_phong_from_material(mat):
             # Check Input 2
             if not tex_input.is_linked:
                 # If we didn't find color in input 1, this might be it
-                # But usually Multiply is (Texture * Color) or (Color * Texture)
-                # We multiply them, so order technically doesn't matter for the float value
                 c = tex_input.default_value
                 found_color = [found_color[0]*c[0], found_color[1]*c[1], found_color[2]*c[2], 1.0]
             elif tex_input.links[0].from_node.type == 'TEX_IMAGE':
@@ -126,41 +125,96 @@ def extract_phong_from_material(mat):
         # Fallback: Unknown node type linked
         return (default_val, None)
 
-    # --- 1. Find the Main Shader Node ---
-    # We prioritize Principled or Diffuse/Glossy
+    # --- Helper: Extract color from a BSDF node directly ---
+    def get_color_from_bsdf(bsdf_node):
+        if not bsdf_node: return ([0.0, 0.0, 0.0, 1.0], None)
+        col_sock = None
+        if "Base Color" in bsdf_node.inputs:
+            col_sock = bsdf_node.inputs["Base Color"]
+        elif "Color" in bsdf_node.inputs:
+            col_sock = bsdf_node.inputs["Color"]
+        
+        if col_sock:
+            return analyze_color_socket(col_sock, col_sock.default_value)
+        return ([0.0, 0.0, 0.0, 1.0], None)
+
+    # --- 1. Identify Nodes (Mix Shader vs Standard) ---
     target_node = None
+    mix_node = None
+    
+    # First, look for a Mix Shader
     for node in mat.node_tree.nodes:
-        if node.type in ['BSDF_PRINCIPLED', 'BSDF_DIFFUSE', 'BSDF_GLOSSY']:
-            target_node = node
+        if node.type == 'MIX_SHADER':
+            mix_node = node
             break
-            
-    # Note: Your original script handled MIX_SHADER. 
-    # For simplicity, we are grabbing the first valid BSDF found.
-    # If you need Mix Shader logic, it gets much more complex with textures on both sides.
+    
+    override_color = None
+    override_texture = None
 
+    if mix_node:
+        # Handle Mix Shader Logic
+        fac = mix_node.inputs['Fac'].default_value
+        
+        # Get the two shaders
+        shader1 = mix_node.inputs[1].links[0].from_node if mix_node.inputs[1].is_linked else None
+        shader2 = mix_node.inputs[2].links[0].from_node if mix_node.inputs[2].is_linked else None
+        
+        # Get colors from both
+        c1, tex1 = get_color_from_bsdf(shader1)
+        c2, tex2 = get_color_from_bsdf(shader2)
+        
+        # Calculate Weighted Average: (C1 * (1-Fac)) + (C2 * Fac)
+        inv_fac = 1.0 - fac
+        mixed_r = (c1[0] * inv_fac) + (c2[0] * fac)
+        mixed_g = (c1[1] * inv_fac) + (c2[1] * fac)
+        mixed_b = (c1[2] * inv_fac) + (c2[2] * fac)
+        
+        override_color = [mixed_r, mixed_g, mixed_b]
+        
+        # Use texture from the dominant shader (simplification)
+        override_texture = tex2 if fac > 0.5 else tex1
+        
+        # Set target_node to the dominant shader so we can still extract Roughness/IOR
+        target_node = shader2 if fac > 0.5 else shader1
+
+    else:
+        # No Mix Shader, find standard BSDF
+        for node in mat.node_tree.nodes:
+            if node.type in ['BSDF_PRINCIPLED', 'BSDF_DIFFUSE', 'BSDF_GLOSSY']:
+                target_node = node
+                break
+            
+    # --- 2. Extract Data ---
     if target_node:
-        # Determine which socket is the color
-        color_socket = None
-        if "Base Color" in target_node.inputs:
-            color_socket = target_node.inputs["Base Color"]
-        elif "Color" in target_node.inputs:
-            color_socket = target_node.inputs["Color"]
-            
-        if color_socket:
-            col_val, tex_data = analyze_color_socket(color_socket, color_socket.default_value)
-            
-            # Convert color to 0-255 int
+        # --- Handle Color ---
+        if override_color:
+            # We calculated a mix
             output_data["base_colour"] = [
-                int(col_val[0] * 255), 
-                int(col_val[1] * 255), 
-                int(col_val[2] * 255)
+                int(override_color[0] * 255), 
+                int(override_color[1] * 255), 
+                int(override_color[2] * 255)
             ]
-            
-            # If we found a texture, add it
-            if tex_data:
-                output_data["texture"] = tex_data
+            if override_texture:
+                output_data["texture"] = override_texture
+        else:
+            # Standard single node extraction
+            color_socket = None
+            if "Base Color" in target_node.inputs:
+                color_socket = target_node.inputs["Base Color"]
+            elif "Color" in target_node.inputs:
+                color_socket = target_node.inputs["Color"]
+                
+            if color_socket:
+                col_val, tex_data = analyze_color_socket(color_socket, color_socket.default_value)
+                output_data["base_colour"] = [
+                    int(col_val[0] * 255), 
+                    int(col_val[1] * 255), 
+                    int(col_val[2] * 255)
+                ]
+                if tex_data:
+                    output_data["texture"] = tex_data
 
-        # --- Extract other Physics (Roughness/IOR) ---
+        # --- Extract other Physics (Roughness/IOR) from the target node ---
         if "Roughness" in target_node.inputs:
             roughness = target_node.inputs["Roughness"].default_value
             output_data["shininess"] = (1.0 - roughness ** 4) * 2048

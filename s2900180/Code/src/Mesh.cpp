@@ -45,6 +45,7 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
     Eigen::Vector3f t_min_normal = Eigen::Vector3f::Zero(); 
     Eigen::Vector3f t_max_normal = Eigen::Vector3f::Zero();
 
+    // perform the 'slab test'
     for (int i = 0; i < 3; ++i) {
         if (std::abs(local_direction[i]) < 1e-6f) {
             if (local_origin[i] < box_min[i] || local_origin[i] > box_max[i]) {
@@ -109,6 +110,7 @@ bool Cube::check_intersect(Ray& ray, Hit* hit) {
             v = local_hit.y() + 0.5f;
         }
 
+        // rotate hit and normal back into world coordinates
         Eigen::Matrix3f R = euler_to_matrix(_rotation);
         Eigen::Vector3f world_hit = R * (local_hit.cwiseProduct(_scale)) + _translation;
         Eigen::Vector3f world_normal = (R * local_normal.cwiseProduct(inv_scale)).normalized();

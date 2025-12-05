@@ -10,6 +10,8 @@ In order to run everything, including converting the file into a PNG, you can ru
 Where filename is everything _before_ the .json extension (eg. test1.json -> test1). In 
 order to adjust the settings for this, change line 18 of build_run_convert.sh.
 
+This will output the generated image in the Output folder.
+
 ## Running unit tests
 While in the `build` folder, do the following 
 ```bash
@@ -30,8 +32,3 @@ When the final code outputs a `.ppm` file, you can convert it into a png using
 ```bash
 convert output.ppm output.png
 ```
-
-## TODO:
-    - Handle refraction 
-    - Distributed ray tracing 
-    - Lens effects 

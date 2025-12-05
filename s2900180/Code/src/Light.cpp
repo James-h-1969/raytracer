@@ -19,17 +19,19 @@ void update_hit_from_intersection(Hit *h, Eigen::Vector3f intersection_point,
 Eigen::Vector3f shade(Hit *hit, std::vector<Light> lights,
                       CameraProperties *props, float Ia,
                       std::unique_ptr<BoundingBoxHierarchyTree> &bbht,
-                      int depth, int max_depth) {
+                      int depth, int max_depth) 
+{
   Eigen::Vector3f P = hit->intersection_point;
   Eigen::Vector3f N = hit->normal.normalized();
   Eigen::Vector3f V = (P - props->location).normalized();
   Eigen::Vector3f shaded = Eigen::Vector3f::Zero();
 
-  // --- Material & Texture Setup ---
+  // convert to 0-1 colour space
   Eigen::Vector3f base_colour(hit->mesh->get_material().base_colour.r / 255.0f,
                               hit->mesh->get_material().base_colour.g / 255.0f,
                               hit->mesh->get_material().base_colour.b / 255.0f);
 
+  // if material has a image texture, read base colour
   PPMImageFile *texture = hit->mesh->get_material().texture;
   if (texture != nullptr && hit->u >= 0 && hit->v >= 0 && hit->u <= 1 &&
       hit->v <= 1) {
@@ -81,14 +83,9 @@ Eigen::Vector3f shade(Hit *hit, std::vector<Light> lights,
     }
   }
 
-  // --- Reflection ---
+  // reflection
   if (reflectivity > 0.0f && depth < max_depth) {
     Eigen::Vector3f R = (V - 2.0f * (N.dot(V)) * N).normalized();
-
-    // if (shininess > 0.0f) {
-    //   R = (R + (random_in_unit_sphere())).normalized();
-    // }
-
     Ray reflect_ray(P + R * 0.001f, R);
     Hit reflect_hit;
     if (bbht->check_intersect(reflect_ray, &reflect_hit, &intersection_test_counter)) {

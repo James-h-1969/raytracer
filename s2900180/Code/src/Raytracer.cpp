@@ -11,7 +11,7 @@ void RayTracer::create_settings_from_command_args(int argc, char* argv[]) {
             _ray_tracer_settings.amount_of_antialiasing_samples_per_pixel = atoi(argv[i+1]); 
         } else if (!strcmp(current_setting, "--recursion-depth")) {
             _ray_tracer_settings.max_depth_of_reflection_recursion = atoi(argv[i+1]);
-        }
+        } // TODO. added distributed rt, lens effects
     }
 }
 
@@ -38,6 +38,7 @@ void RayTracer::render_image() {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
     int intersection_test_counter = 0;
+    // iterate through each pixel, shade correspondingly
     for (int px = 0; px < image.get_width(); px++) {
         for (int py = 0; py < image.get_height(); py++) {            
             Eigen::Vector3f overall_shade = Eigen::Vector3f::Zero();
@@ -46,6 +47,7 @@ void RayTracer::render_image() {
                 float sample_offset_x = distribution(generator);
                 float sample_offset_y = distribution(generator);
 
+                // lock into bounds of image
                 float sample_px = std::min((float)px + sample_offset_x, (float)image.get_width()-1.0f);
                 float sample_py = std::min((float)py + sample_offset_y, (float)image.get_height()-1.0f);
 

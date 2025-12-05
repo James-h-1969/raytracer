@@ -16,7 +16,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # --- Source files (shared between main and tests) ---
 set(SOURCES
-    src/Camera.cpp
     src/Image.cpp
     src/Mesh.cpp
     src/BlenderFileReader.cpp

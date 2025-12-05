@@ -1,5 +1,6 @@
 #import "@preview/subpar:0.2.2"
 
+#set text(size:12pt)
 #set align(center)
 = Computer Graphics: Rendering
 === Coursework Final Report
@@ -34,14 +35,14 @@ The first feature that I developed was the exporter for blender. This basically 
 ```
 Write me a Python script to run in the Blender scripting environment that creates a json file representing the scene. Make sure to include point lights (position and radiant intensity), all important details of any meshes including all transformations, and give all details of the camera in order to simulate it.
 ```
-This gave very successful results, however I had to slightly modify the script to include the 'up vector' of the camera, as this meant in my camera space rotations, it would be slightly off till I made this correction.
+This gave very successful results, however I had to slightly modify the script to include the 'up vector' of the camera, as this meant in my camera space rotations, it would be slightly off till I made this correction. To see examples of the output, check out ASCII/test1.json
 
 === Image Reader/Writer 
 The next feature developed was a PPM Image reader, updater and writer. For this, I primarily developed this by myself without any AI help. One of the prompts that I used for this was:
 ```
 What does the P3 mean at the start of a PPM file?
 ```
-In which it helped me understand the format of PPM in a much clearer sense (the answer to the above question is that P3 is the magic number representing the file type). Apart from this, this module was basically a CRUD for the images. In order to validate that I was doing this correctly, I used `gtest`, the Google testing software in order to write unit tests for this functionality, which my code past. See the README on how to run these tests. 
+In which it helped me understand the format of PPM in a much clearer sense (the answer to the above question is that P3 is the magic number representing the file type). Apart from this, this module was basically a CRUD for the images. In order to validate that I was doing this correctly, I used `gtest`, the Google testing software in order to write unit tests for this functionality, which my code passed. See the README on how to run these tests. Furthermore, all other examples of images shown in the report are examples for this feature working. 
 
 === Ray Intersection with Acceleration 
 After importing the camera and all meshes, the next feature developed was to change the pixels of the camera into rays in the world space. This was done using the rotation matrices in the file and converting them into euler angles. This was confirmed by using a blender script (found in Blend/Ray_visualiser.py) to show the rays, see @rays-rotated .An error that took a while to solve was that the camera fit (Horizontal or Vertical) would be automatically decided in Blender, and this had to be programmed into the C++. 
@@ -92,19 +93,54 @@ The next feature that I built was a shade function, which I first had to build i
   label: <comp>,
   caption: [Comparison between blender rendering and my rendering]
 )
-As you can see, this shows implementation of Blinn-Phong shading, with reflections and shadows. 
+As you can see, this shows implementation of Blinn-Phong shading, with reflections and shadows. I think the main difference between the two is the reflected specular components, potentially having a different specular constant between the two renders.
 
-The part that I have not implemented yet is refraction. This would involve altering the colour by the internal reflection (with changes due to changing index of refraction).
+The part that I have not implemented yet is refraction. This would involve altering the colour by the internal reflection (with changes due to changing index of refraction). I have implemented exporting the required material properties, however unfortunately the functionality within the shading function has not been developed.
 
 === Antialiasing 
-This was relativly simple to implement, instead of shooting one ray the code shoots multiple (decided from the command line). These shade values were then averaged to give a more precise measurement. I implemented this without the use of AI.
+This was relativly simple to implement, instead of shooting one ray the code shoots multiple (decided from the command line). These shade values were then averaged to give a more precise measurement. I implemented this without the use of AI. The following code, found in src/Raytracer.cpp `render_image` function shows the use of antialiasing:
+#set text(size:8pt)
+```cpp
+Eigen::Vector3f overall_shade = Eigen::Vector3f::Zero();
+bool is_hit = false;
+for (int sample_i = 0; sample_i < _ray_tracer_settings.amount_of_antialiasing_samples_per_pixel; sample_i++) {
+    float sample_offset_x = distribution(generator);
+    float sample_offset_y = distribution(generator);
+
+    // lock into bounds of image
+    float sample_px = std::min((float)px + sample_offset_x, (float)image.get_width()-1.0f);
+    float sample_py = std::min((float)py + sample_offset_y, (float)image.get_height()-1.0f);
+
+    Pixel p = image.get_pixel(sample_px, sample_py);
+    Ray r = p.as_ray(_props);
+    Hit h;
+
+    if (_bbht->check_intersect(r, &h, &intersection_test_counter)) {
+        Eigen::Vector3f s = shade(&h, _lights, &_props, 1.0f, _bbht, 0, _ray_tracer_settings.max_depth_of_reflection_recursion);
+        
+        // shade operates in 0-1 shading region, convert back to rgb255
+        overall_shade[0] += s[0] * 255.0f;
+        overall_shade[1] += s[1] * 255.0f;
+        overall_shade[2] += s[2] * 255.0f;
+
+        is_hit = true;
+    }
+}
+
+overall_shade /= _ray_tracer_settings.amount_of_antialiasing_samples_per_pixel; // finding the average
+if (!is_hit) overall_shade += blender_background;
+Colour new_colour{overall_shade[0], overall_shade[1], overall_shade[2]};
+
+image.update_pixel(px, py, new_colour);
+```
+#set text(size:12pt)
 
 === Textures 
-In term of the textures, I asked the AI:
+In term of the textures, the first step was to add the u, v coordinates of the image to the intersection test. The following prompt was used:
 ```
 Given the current script I have for intersection <pasted script>, how would I make it so the hit structure also returns a u,v coordinate for the texture? 
 ```
-This gave good results. I also had to update the blender script to return the absolute path to the PPM files that it was using for the textures. 
+This gave good results. I also had to update the blender script to return the absolute path to the PPM files that it was using for the textures. After this, when the shade function is running, the base colour can be selected by getting the corresponding pixel in the image and using that. This gave the following results:
 #subpar.grid(
   figure(image("images/test-2-b.png", height:20%), caption: [
     Blender Render of test scene
@@ -116,7 +152,22 @@ This gave good results. I also had to update the blender script to return the ab
   label: <comp-text>,
   caption: [Comparison between blender textures and my textures]
 )
-In @comp-text, each mesh has the texture overlayed over it - comparing between the blender output and mine, it looks like mine has harsher lighting and slightly lighter colour, which I believe is a product of exporting the material properties slightly wrong. Further development may be required to get the orientation of the texture on each face completely correct, as Blender has its own orientation that my script needs to adjust to. 
+In @comp-text, each mesh has the texture overlayed over it - comparing between the blender output and mine, it looks like mine has harsher lighting and slightly lighter colour, which I believe is a result of different material calculations between blender's code and mine (such as a different ambient coefficient). One of the difficulties that I had with this was getting the orientation of the image correct on the faces, however trial and error helped me work this out. 
+
+=== System Integration 
+I believe that the code that I implemented is very modular and all parts that I have completed have been integrated well. I think this is seen most clearly in the main file where the raytracer is created and controlled from the command line:
+```cpp
+int main(int argc, char* argv[]) {
+  RayTracer raytracer;
+
+  raytracer.create_settings_from_command_args(argc, argv);
+  raytracer.setup();
+
+  raytracer.render_image();
+  return 0;
+}
+```
+In the create settings from command args function, all optional features (antialiasing, reflections, etc) have the ability to toggle on and off depending on preferences. The filenames for the input and output can also be entered this way as well. 
 
 === Timeliness
 In terms of the differences between what I submitted (only Module 1), they were primarily based around the change in details that I needed for the objects in the scene. In Module 1, my exporter in Blender (and thus reader in C++) only focused on the key characteristics of each item. For example with the Mesh, all material characteristics were ignored, and in the final iteration of the code this was updated. A further update was made to all the actual Mesh objects in C++ to account for this as well. Apart from this, no major changes were made.   

@@ -1,4 +1,10 @@
-- Camera class is implemented
-- PPM image reader and writer is implemented 
-- Intersection tests are implemented 
-- Bounding Box Hierarchy acceleration is implemented
+- Blender Exporter Complete
+- Camera Space Complete 
+- Image R/W Complete 
+- Ray intersection + Acceleration Complete
+- Whitted Style Complete (Reflection complete, Refraction incomplete)
+- Antialiasing Complete
+- Textures Complete
+- Sys. Itegration Complete
+- Distributed Ray tracing incomplete 
+- Lens effect incomplete 
