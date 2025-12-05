@@ -32,3 +32,7 @@ When the final code outputs a `.ppm` file, you can convert it into a png using
 ```bash
 convert output.ppm output.png
 ```
+
+## Recreating images from the report 
+In order to recreate the images shown in the report, use any of the files in the ASCII folder and run
+`./build_run_convert` command on that file as described in the build instructions.

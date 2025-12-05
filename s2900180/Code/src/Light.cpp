@@ -59,6 +59,10 @@ Eigen::Vector3f shade(Hit *hit, std::vector<Light> lights,
   for (Light &light : lights) {
     float id = light.get_id();
     float is = light.get_is();
+
+    if (id > 1) {id /= 255.0f;}
+    if (is > 1) {is /= 255.0f;}
+
     Eigen::Vector3f light_vec = light.get_location() - P;
     Eigen::Vector3f L = light_vec.normalized();
     float distance_to_light = light_vec.norm();

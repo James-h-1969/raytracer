@@ -49,7 +49,7 @@ def extract_texture_path_from_material(mat):
             return {
                 "absolute_path": path,
             }
-     
+    
     return None
 
 def extract_phong_from_material(mat):
@@ -57,7 +57,7 @@ def extract_phong_from_material(mat):
     Extracts Phong parameters and handles Texture * Color multiplication logic.
     Also handles MIX_SHADER by averaging the base colours.
     """
-     
+    
     if not mat or not mat.use_nodes:
         return None
 
@@ -67,7 +67,7 @@ def extract_phong_from_material(mat):
         "kd": 0.5,
         "ks": 0.5,
         "shininess": 0.0,
-        "reflectivity": 0.3,
+        "reflectivity": 0.2,
         "transparancy": 0.0,
         "ior": 1.0,
         "base_colour": [0, 0, 0], # Default black
@@ -80,10 +80,10 @@ def extract_phong_from_material(mat):
         # 1. If no link, just return the color picker value
         if not socket.is_linked:
             return (default_val, None)
-         
+        
         # 2. Trace the link
         node = socket.links[0].from_node
-         
+        
         # CASE A: Direct Texture Link
         # If linked directly to an image, the "Tint" is White (1.0)
         if node.type == 'TEX_IMAGE' and node.image:
@@ -96,7 +96,7 @@ def extract_phong_from_material(mat):
             # We need to find which input is color and which is texture
             col_input = node.inputs[1] # "Color1"
             tex_input = node.inputs[2] # "Color2"
-             
+            
             found_color = [1.0, 1.0, 1.0, 1.0]
             found_path = None
 
@@ -223,7 +223,7 @@ def extract_phong_from_material(mat):
             output_data["ior"] = target_node.inputs["IOR"].default_value
             
         if "Transmission" in target_node.inputs:
-             output_data["transparancy"] = target_node.inputs["Transmission"].default_value
+            output_data["transparancy"] = target_node.inputs["Transmission"].default_value
 
     return output_data
 

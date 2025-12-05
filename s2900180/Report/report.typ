@@ -93,6 +93,17 @@ The next feature that I built was a shade function, which I first had to build i
   label: <comp>,
   caption: [Comparison between blender rendering and my rendering]
 )
+#subpar.grid(
+  figure(image("images/test-3-b.png", height:20%), caption: [
+    Blender Render of test scene
+  ]), <a>,
+  figure(image("images/test-3.png", height:20%), caption: [
+    PPM file generated 
+  ]), <b>,
+  columns: (1fr, 1fr),
+  label: <comp-2>,
+  caption: [Comparison between blender rendering and my rendering]
+)
 As you can see, this shows implementation of Blinn-Phong shading, with reflections and shadows. I think the main difference between the two is the reflected specular components, potentially having a different specular constant between the two renders.
 
 The part that I have not implemented yet is refraction. This would involve altering the colour by the internal reflection (with changes due to changing index of refraction). I have implemented exporting the required material properties, however unfortunately the functionality within the shading function has not been developed.
@@ -170,7 +181,8 @@ int main(int argc, char* argv[]) {
 In the create settings from command args function, all optional features (antialiasing, reflections, etc) have the ability to toggle on and off depending on preferences. The filenames for the input and output can also be entered this way as well. 
 
 === Timeliness
-In terms of the differences between what I submitted (only Module 1), they were primarily based around the change in details that I needed for the objects in the scene. In Module 1, my exporter in Blender (and thus reader in C++) only focused on the key characteristics of each item. For example with the Mesh, all material characteristics were ignored, and in the final iteration of the code this was updated. A further update was made to all the actual Mesh objects in C++ to account for this as well. Apart from this, no major changes were made.   
+==== Module 1
+In terms of the differences between what I submitted, they were primarily based around the change in details that I needed for the objects in the scene. In Module 1, my exporter in Blender (and thus reader in C++) only focused on the key characteristics of each item. For example with the Mesh, all material characteristics were ignored, and in the final iteration of the code this was updated. A further update was made to all the actual Mesh objects in C++ to account for this as well. Apart from this, no major changes were made.   
 
 === Strengths and Weaknesses of using Coding Assistants.
 The use of coding assistants for this assignments was both a positive and negative experience. In terms of the benefits, I found that using assistants meant that I could debug much quicker as it would very quickly sift through complex error messages and arrive at solutions. Furthermore, it gave suggestions that I believe helped progress my C++ skills, for example letting me know when to hand references into functions, as well as proper `const` correctness for attributes and other functions. I tried to use these suggestions as learning points for the future. In terms of negatives, I think that using multiple prompts over different days meant that it would not understand some of the assumptions that were made by times I had asked it questions. For example, in my shade function, I had the following line:
